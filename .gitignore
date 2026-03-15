@@ -1,69 +1,198 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
+# ==========================================
+# General / OS
+# ==========================================
 .DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+.DS_Store?
+Thumbs.db
+Desktop.ini
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.history/
 
-# IntelliJ related
+# ==========================================
+# VS Code
+# ==========================================
+.vscode/
+
+# ==========================================
+# JetBrains / IntelliJ / Android Studio
+# ==========================================
+.idea/
 *.iml
 *.ipr
 *.iws
-.idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-bin/
-obj/
+# ==========================================
+# Visual Studio / Rider / .NET
+# ==========================================
 .vs/
-*.user
 *.suo
+*.user
 *.userosscache
 *.sln.docstates
+*.rsuser
 
-# Build results
-[Bb]uild/
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+[Aa]rtifacts/
 [Dd]ebug/
 [Rr]elease/
 x64/
 x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]enchmark[Dd]ot[Nn]et.Artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+
+# Uncomment if you use Paket
+# .paket/
+# paket-files/
+
+# .NET local tools / generated
+project.lock.json
+project.fragment.lock.json
 artifacts/
 
-# Visual Studio Code
-.vscode/
+# Publish output
+publish/
 
-# Mac
-.DS_Store%
+# ASP.NET / IIS Express
+iisexpress/
+*.vspscc
+*.vssscc
+
+# Entity Framework / local db files
+*.mdf
+*.ldf
+
+# Resharper / Rider caches
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# ==========================================
+# Flutter / Dart
+# ==========================================
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+build/
+coverage/
+
+# Flutter generated / misc
+**/doc/api/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+
+# Symbolication / obfuscation
+app.*.symbols
+app.*.map.json
+
+# ==========================================
+# Android / Flutter Android
+# ==========================================
+**/android/.gradle/
+**/android/captures/
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.*
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+
+# Keystore / signing
+*.jks
+*.keystore
+key.properties
+
+# ==========================================
+# iOS / Flutter iOS
+# ==========================================
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/flutter_export_environment.sh
+
+# Xcode user data
+**/ios/*.xcworkspace
+!**/ios/Runner.xcworkspace/contents.xcworkspacedata
+**/ios/xcuserdata/
+**/ios/*.xcuserstate
+
+# ==========================================
+# macOS Flutter desktop
+# ==========================================
+**/macos/Flutter/ephemeral/
+
+# ==========================================
+# Linux Flutter desktop
+# ==========================================
+**/linux/flutter/ephemeral/
+
+# ==========================================
+# Windows Flutter desktop
+# ==========================================
+**/windows/flutter/ephemeral/
+
+# ==========================================
+# Secrets / environment
+# ==========================================
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# App secrets / config overrides
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+
+# Firebase / local-only configs if needed
+# Uncomment if you don't want them tracked
+# firebase_options.dart
+# google-services.json
+# GoogleService-Info.plist
+
+# ==========================================
+# Archives / packages
+# ==========================================
+*.zip
+*.tar
+*.gz
+*.rar
+
+# ==========================================
+# Temporary migration / work dirs
+# ==========================================
+migrate_working_dir/
+.build/
+.buildlog/
+.svn/
+.atom/
+.swiftpm/
+
+# ==========================================
+# Keep these tracked if present
+# ==========================================
+!README.md
+!.gitignore
