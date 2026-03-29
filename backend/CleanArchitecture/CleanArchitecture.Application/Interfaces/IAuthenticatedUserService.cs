@@ -3,5 +3,6 @@
     public interface IAuthenticatedUserService
     {
         string UserId { get; }
+        string Role { get; }
     }
 }

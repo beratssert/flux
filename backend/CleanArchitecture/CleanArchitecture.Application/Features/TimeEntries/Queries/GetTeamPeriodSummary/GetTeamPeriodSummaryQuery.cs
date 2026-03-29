@@ -1,4 +1,6 @@
 using AutoMapper;
+using CleanArchitecture.Core.Enums;
+using CleanArchitecture.Core.Exceptions;
 using CleanArchitecture.Core.Interfaces;
 using CleanArchitecture.Core.Interfaces.Repositories;
 using MediatR;
@@ -34,6 +36,14 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamPeriodSumma
 
         public async Task<List<GetTeamPeriodSummaryViewModel>> Handle(GetTeamPeriodSummaryQuery request, CancellationToken cancellationToken)
         {
+            var role = _authenticatedUserService.Role;
+            var isManager = string.Equals(role, Roles.Manager.ToString(), System.StringComparison.OrdinalIgnoreCase);
+            var isAdmin = string.Equals(role, Roles.Admin.ToString(), System.StringComparison.OrdinalIgnoreCase);
+            if (!isManager && !isAdmin)
+            {
+                throw new ApiException("Only manager or admin can access team period summary.");
+            }
+
             var summary = await _timeEntryRepository.GetPeriodSummaryByManagedProjectsAsync(
                 _authenticatedUserService.UserId,
                 request.From,

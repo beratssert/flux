@@ -32,6 +32,7 @@ namespace CleanArchitecture.UnitTests
             _projectAssignmentRepository = new Mock<IProjectAssignmentRepositoryAsync>();
             _authenticatedUserService = new Mock<IAuthenticatedUserService>();
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("user-1");
+            _authenticatedUserService.SetupGet(a => a.Role).Returns("Employee");
         }
 
         [Fact]
@@ -200,6 +201,7 @@ namespace CleanArchitecture.UnitTests
         {
             var mapper = new Mock<IMapper>();
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("manager-1");
+            _authenticatedUserService.SetupGet(a => a.Role).Returns("Manager");
 
             var repositoryEntries = new List<TimeEntry>
             {
@@ -279,6 +281,7 @@ namespace CleanArchitecture.UnitTests
         {
             var mapper = new Mock<IMapper>();
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("manager-1");
+            _authenticatedUserService.SetupGet(a => a.Role).Returns("Manager");
 
             _timeEntryRepository
                 .Setup(r => r.GetPagedByManagedProjectsAsync("manager-1", 1, 10, null, null, null, null, null, null, null))
@@ -310,10 +313,39 @@ namespace CleanArchitecture.UnitTests
         }
 
         [Fact]
+        public async Task GetTeamTimeEntries_WhenEmployeeRole_ShouldThrowApiException()
+        {
+            var mapper = new Mock<IMapper>();
+            _authenticatedUserService.SetupGet(a => a.UserId).Returns("employee-1");
+            _authenticatedUserService.SetupGet(a => a.Role).Returns("Employee");
+
+            var handler = new GetTeamTimeEntriesQueryHandler(
+                _timeEntryRepository.Object,
+                _authenticatedUserService.Object,
+                mapper.Object);
+
+            await Assert.ThrowsAsync<ApiException>(() =>
+                handler.Handle(new GetTeamTimeEntriesQuery { PageNumber = 1, PageSize = 10 }, CancellationToken.None));
+
+            _timeEntryRepository.Verify(r => r.GetPagedByManagedProjectsAsync(
+                It.IsAny<string>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<int?>(),
+                It.IsAny<string>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<DateTime?>(),
+                It.IsAny<bool?>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
         public async Task GetTeamProjectSummary_WhenManagerRequests_ShouldReturnMappedProjectTotals()
         {
             var mapper = new Mock<IMapper>();
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("manager-1");
+            _authenticatedUserService.SetupGet(a => a.Role).Returns("Manager");
 
             var summary = new List<TeamProjectSummaryDto>
             {
@@ -360,6 +392,7 @@ namespace CleanArchitecture.UnitTests
         {
             var mapper = new Mock<IMapper>();
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("manager-1");
+            _authenticatedUserService.SetupGet(a => a.Role).Returns("Manager");
 
             var day = DateTime.UtcNow.Date;
             var summary = new List<TeamPeriodSummaryDto>
@@ -402,5 +435,6 @@ namespace CleanArchitecture.UnitTests
 
             _timeEntryRepository.Verify(r => r.GetPeriodSummaryByManagedProjectsAsync("manager-1", from, to, 100, "employee-1"), Times.Once);
         }
+
     }
 }
