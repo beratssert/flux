@@ -18,6 +18,9 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamTimeEntries
         public string EmployeeUserId { get; set; }
         public System.DateTime? From { get; set; }
         public System.DateTime? To { get; set; }
+        public bool? IsBillable { get; set; }
+        public string SortBy { get; set; }
+        public string SortDir { get; set; }
     }
 
     public class GetTeamTimeEntriesQueryHandler : IRequestHandler<GetTeamTimeEntriesQuery, PagedResponse<GetAllTimeEntriesViewModel>>
@@ -45,13 +48,17 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamTimeEntries
                 request.ProjectId,
                 request.EmployeeUserId,
                 request.From,
-                request.To);
+                request.To,
+                request.IsBillable,
+                request.SortBy,
+                request.SortDir);
             var totalCount = await _timeEntryRepository.CountByManagedProjectsAsync(
                 _authenticatedUserService.UserId,
                 request.ProjectId,
                 request.EmployeeUserId,
                 request.From,
-                request.To);
+                request.To,
+                request.IsBillable);
 
             var vm = _mapper.Map<List<GetAllTimeEntriesViewModel>>(entries);
             return new PagedResponse<GetAllTimeEntriesViewModel>(vm, request.PageNumber, request.PageSize, totalCount);

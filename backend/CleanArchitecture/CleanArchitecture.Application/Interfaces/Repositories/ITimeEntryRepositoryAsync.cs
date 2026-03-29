@@ -9,8 +9,22 @@ namespace CleanArchitecture.Core.Interfaces.Repositories
     public interface ITimeEntryRepositoryAsync : IGenericRepositoryAsync<TimeEntry>
     {
         Task<TimeEntry> GetByIdAndUserIdAsync(int id, string userId);
-        Task<IReadOnlyList<TimeEntry>> GetPagedByUserIdAsync(string userId, int pageNumber, int pageSize);
-        Task<int> CountByUserIdAsync(string userId);
+        Task<IReadOnlyList<TimeEntry>> GetPagedByUserIdAsync(
+            string userId,
+            int pageNumber,
+            int pageSize,
+            int? projectId = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            bool? isBillable = null,
+            string sortBy = null,
+            string sortDir = null);
+        Task<int> CountByUserIdAsync(
+            string userId,
+            int? projectId = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            bool? isBillable = null);
         Task<IReadOnlyList<TimeEntry>> GetPagedByManagedProjectsAsync(
             string managerUserId,
             int pageNumber,
@@ -18,13 +32,17 @@ namespace CleanArchitecture.Core.Interfaces.Repositories
             int? projectId = null,
             string employeeUserId = null,
             DateTime? from = null,
-            DateTime? to = null);
+            DateTime? to = null,
+            bool? isBillable = null,
+            string sortBy = null,
+            string sortDir = null);
         Task<int> CountByManagedProjectsAsync(
             string managerUserId,
             int? projectId = null,
             string employeeUserId = null,
             DateTime? from = null,
-            DateTime? to = null);
+            DateTime? to = null,
+            bool? isBillable = null);
         Task<IReadOnlyList<TeamProjectSummaryDto>> GetProjectSummaryByManagedProjectsAsync(
             string managerUserId,
             DateTime? from = null,

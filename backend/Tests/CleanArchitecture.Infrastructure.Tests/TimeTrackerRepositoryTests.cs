@@ -231,5 +231,58 @@ namespace CleanArchitecture.Infrastructure.Tests
             Assert.Equal(1, summary[0].ProjectCount);
             Assert.Equal(1, summary[0].EmployeeCount);
         }
+
+        [Fact]
+        public async Task GetPagedByManagedProjectsAsync_WhenBillableAndSortApplied_ShouldReturnFilteredSortedRows()
+        {
+            const string managerUserId = "manager-30";
+
+            _context.Projects.Add(new Project { Id = 400, Name = "P-Managed", ManagerUserId = managerUserId, Status = "Active" });
+            _context.TimeEntries.AddRange(
+                new TimeEntry
+                {
+                    UserId = "employee-a",
+                    ProjectId = 400,
+                    EntryDate = DateTime.UtcNow.Date,
+                    DurationMinutes = 40,
+                    IsBillable = true,
+                    SourceType = "Manual"
+                },
+                new TimeEntry
+                {
+                    UserId = "employee-b",
+                    ProjectId = 400,
+                    EntryDate = DateTime.UtcNow.Date,
+                    DurationMinutes = 20,
+                    IsBillable = true,
+                    SourceType = "Manual"
+                },
+                new TimeEntry
+                {
+                    UserId = "employee-c",
+                    ProjectId = 400,
+                    EntryDate = DateTime.UtcNow.Date,
+                    DurationMinutes = 10,
+                    IsBillable = false,
+                    SourceType = "Manual"
+                });
+            await _context.SaveChangesAsync();
+
+            var repository = new TimeEntryRepositoryAsync(_context);
+
+            var result = await repository.GetPagedByManagedProjectsAsync(
+                managerUserId,
+                pageNumber: 1,
+                pageSize: 10,
+                projectId: 400,
+                isBillable: true,
+                sortBy: "durationMinutes",
+                sortDir: "asc");
+
+            Assert.Equal(2, result.Count);
+            Assert.Equal(20, result[0].DurationMinutes);
+            Assert.Equal(40, result[1].DurationMinutes);
+            Assert.All(result, r => Assert.True(r.IsBillable));
+        }
     }
 }

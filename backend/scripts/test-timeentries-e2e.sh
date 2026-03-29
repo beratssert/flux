@@ -90,6 +90,11 @@ echo "[INFO] Team endpoint supports employee filter"
 filtered_body=$(curl -s "$base_url/api/v1/TimeEntries/team?pageNumber=1&pageSize=10&employeeUserId=does-not-exist" -H "Authorization: Bearer $manager_token")
 assert_contains "$filtered_body" '"items":[]' "Filter by unknown employee returns empty team list"
 
+echo "[INFO] Team endpoint supports billable + sort combinations"
+sorted_billable_body=$(curl -s "$base_url/api/v1/TimeEntries/team?pageNumber=1&pageSize=10&isBillable=true&sortBy=durationMinutes&sortDir=asc" -H "Authorization: Bearer $manager_token")
+assert_contains "$sorted_billable_body" '"items":' "Billable + sort query returns paged items"
+assert_contains "$sorted_billable_body" '"durationMinutes":90' "Billable filter returns expected seeded billable entry"
+
 echo "[INFO] Manager can access project summary"
 project_summary_status=$(curl -s -o /dev/null -w "%{http_code}" "$base_url/api/v1/TimeEntries/team/summary/projects" -H "Authorization: Bearer $manager_token")
 assert_status "$project_summary_status" "200" "Manager project summary endpoint returns 200"

@@ -25,7 +25,13 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return await Mediator.Send(new GetAllTimeEntriesQuery
             {
                 PageNumber = filter.PageNumber,
-                PageSize = filter.PageSize
+                PageSize = filter.PageSize,
+                ProjectId = filter.ProjectId,
+                From = filter.From,
+                To = filter.To,
+                IsBillable = filter.IsBillable,
+                SortBy = filter.SortBy,
+                SortDir = filter.SortDir
             });
         }
 
@@ -40,7 +46,10 @@ namespace CleanArchitecture.WebApi.Controllers.v1
                 ProjectId = filter.ProjectId,
                 EmployeeUserId = filter.EmployeeUserId,
                 From = filter.From,
-                To = filter.To
+                To = filter.To,
+                IsBillable = filter.IsBillable,
+                SortBy = filter.SortBy,
+                SortDir = filter.SortDir
             });
         }
 

@@ -9,5 +9,8 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamTimeEntries
         public string EmployeeUserId { get; set; }
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
+        public bool? IsBillable { get; set; }
+        public string SortBy { get; set; }
+        public string SortDir { get; set; }
     }
 }

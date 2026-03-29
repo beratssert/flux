@@ -125,6 +125,77 @@ namespace CleanArchitecture.UnitTests
         }
 
         [Fact]
+        public async Task GetAllTimeEntries_WhenFilterAndSortProvided_ShouldPassArgumentsAndBuildPage()
+        {
+            var mapper = new Mock<IMapper>();
+            _authenticatedUserService.SetupGet(a => a.UserId).Returns("employee-1");
+
+            var from = DateTime.UtcNow.Date.AddDays(-5);
+            var to = DateTime.UtcNow.Date;
+            var query = new GetAllTimeEntriesQuery
+            {
+                PageNumber = 1,
+                PageSize = 20,
+                ProjectId = 100,
+                From = from,
+                To = to,
+                IsBillable = true,
+                SortBy = "durationMinutes",
+                SortDir = "asc"
+            };
+
+            var mappedFilter = new GetAllTimeEntriesParameter
+            {
+                PageNumber = 1,
+                PageSize = 20,
+                ProjectId = 100,
+                From = from,
+                To = to,
+                IsBillable = true,
+                SortBy = "durationMinutes",
+                SortDir = "asc"
+            };
+
+            var repositoryEntries = new List<TimeEntry>
+            {
+                new TimeEntry { Id = 10, UserId = "employee-1", ProjectId = 100, DurationMinutes = 30, EntryDate = from, IsBillable = true, SourceType = "Manual" }
+            };
+
+            var mappedEntries = new List<GetAllTimeEntriesViewModel>
+            {
+                new GetAllTimeEntriesViewModel { Id = 10, UserId = "employee-1", ProjectId = 100, DurationMinutes = 30, IsBillable = true, SourceType = "Manual" }
+            };
+
+            mapper.Setup(m => m.Map<GetAllTimeEntriesParameter>(query)).Returns(mappedFilter);
+            mapper.Setup(m => m.Map<List<GetAllTimeEntriesViewModel>>(repositoryEntries)).Returns(mappedEntries);
+
+            _timeEntryRepository
+                .Setup(r => r.GetPagedByUserIdAsync("employee-1", 1, 20, 100, from, to, true, "durationMinutes", "asc"))
+                .ReturnsAsync(repositoryEntries);
+
+            _timeEntryRepository
+                .Setup(r => r.CountByUserIdAsync("employee-1", 100, from, to, true))
+                .ReturnsAsync(1);
+
+            var handler = new GetAllTimeEntriesQueryHandler(
+                _timeEntryRepository.Object,
+                _authenticatedUserService.Object,
+                mapper.Object);
+
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            Assert.Equal(1, result.Page);
+            Assert.Equal(20, result.PageSize);
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Items);
+
+            _timeEntryRepository.Verify(r => r.GetPagedByUserIdAsync(
+                "employee-1", 1, 20, 100, from, to, true, "durationMinutes", "asc"), Times.Once);
+            _timeEntryRepository.Verify(r => r.CountByUserIdAsync(
+                "employee-1", 100, from, to, true), Times.Once);
+        }
+
+        [Fact]
         public async Task GetTeamTimeEntries_WhenManagerRequests_ShouldPassScopeFiltersAndReturnMappedPage()
         {
             var mapper = new Mock<IMapper>();
@@ -146,11 +217,11 @@ namespace CleanArchitecture.UnitTests
             var to = DateTime.UtcNow.Date;
 
             _timeEntryRepository
-                .Setup(r => r.GetPagedByManagedProjectsAsync("manager-1", 2, 5, 100, "employee-1", from, to))
+                .Setup(r => r.GetPagedByManagedProjectsAsync("manager-1", 2, 5, 100, "employee-1", from, to, null, null, null))
                 .ReturnsAsync(repositoryEntries);
 
             _timeEntryRepository
-                .Setup(r => r.CountByManagedProjectsAsync("manager-1", 100, "employee-1", from, to))
+                .Setup(r => r.CountByManagedProjectsAsync("manager-1", 100, "employee-1", from, to, null))
                 .ReturnsAsync(7);
 
             mapper
@@ -190,13 +261,17 @@ namespace CleanArchitecture.UnitTests
                 100,
                 "employee-1",
                 from,
-                to), Times.Once);
+                to,
+                null,
+                null,
+                null), Times.Once);
             _timeEntryRepository.Verify(r => r.CountByManagedProjectsAsync(
                 "manager-1",
                 100,
                 "employee-1",
                 from,
-                to), Times.Once);
+                to,
+                null), Times.Once);
         }
 
         [Fact]
@@ -206,11 +281,11 @@ namespace CleanArchitecture.UnitTests
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("manager-1");
 
             _timeEntryRepository
-                .Setup(r => r.GetPagedByManagedProjectsAsync("manager-1", 1, 10, null, null, null, null))
+                .Setup(r => r.GetPagedByManagedProjectsAsync("manager-1", 1, 10, null, null, null, null, null, null, null))
                 .ReturnsAsync(new List<TimeEntry>());
 
             _timeEntryRepository
-                .Setup(r => r.CountByManagedProjectsAsync("manager-1", null, null, null, null))
+                .Setup(r => r.CountByManagedProjectsAsync("manager-1", null, null, null, null, null))
                 .ReturnsAsync(0);
 
             mapper
