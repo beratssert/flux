@@ -54,6 +54,21 @@ namespace CleanArchitecture.Core.Interfaces.Repositories
             DateTime? to = null,
             int? projectId = null,
             string employeeUserId = null);
+        Task<IReadOnlyList<TimeSummaryRowDto>> GetSummaryRowsByUserAsync(
+            string userId,
+            DateTime? from = null,
+            DateTime? to = null);
+        Task<IReadOnlyList<TimeSummaryRowDto>> GetSummaryRowsByManagedProjectsAsync(
+            string managerUserId,
+            int? projectId = null,
+            string employeeUserId = null,
+            DateTime? from = null,
+            DateTime? to = null);
+        Task<IReadOnlyList<TimeSummaryRowDto>> GetSummaryRowsAllAsync(
+            int? projectId = null,
+            string employeeUserId = null,
+            DateTime? from = null,
+            DateTime? to = null);
         Task<bool> HasOverlappingEntryAsync(string userId, DateTime startUtc, DateTime endUtc, int? excludeId = null);
     }
 }

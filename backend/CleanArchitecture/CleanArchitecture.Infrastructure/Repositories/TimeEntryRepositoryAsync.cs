@@ -202,6 +202,96 @@ namespace CleanArchitecture.Infrastructure.Repositories
             return query.AnyAsync();
         }
 
+        public async Task<IReadOnlyList<TimeSummaryRowDto>> GetSummaryRowsByUserAsync(
+            string userId,
+            DateTime? from = null,
+            DateTime? to = null)
+        {
+            var query = _timeEntries.Where(te => te.UserId == userId && te.DeletedAtUtc == null);
+
+            if (from.HasValue)
+            {
+                query = query.Where(te => te.EntryDate >= from.Value.Date);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(te => te.EntryDate <= to.Value.Date);
+            }
+
+            return await query
+                .Select(te => new TimeSummaryRowDto
+                {
+                    UserId = te.UserId,
+                    ProjectId = te.ProjectId,
+                    EntryDate = te.EntryDate,
+                    DurationMinutes = te.DurationMinutes
+                })
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<TimeSummaryRowDto>> GetSummaryRowsByManagedProjectsAsync(
+            string managerUserId,
+            int? projectId = null,
+            string employeeUserId = null,
+            DateTime? from = null,
+            DateTime? to = null)
+        {
+            var query = BuildManagedProjectsQuery(managerUserId, projectId, employeeUserId, from, to, null);
+
+            return await query
+                .Select(te => new TimeSummaryRowDto
+                {
+                    UserId = te.UserId,
+                    ProjectId = te.ProjectId,
+                    EntryDate = te.EntryDate,
+                    DurationMinutes = te.DurationMinutes
+                })
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<TimeSummaryRowDto>> GetSummaryRowsAllAsync(
+            int? projectId = null,
+            string employeeUserId = null,
+            DateTime? from = null,
+            DateTime? to = null)
+        {
+            var query = _timeEntries.Where(te => te.DeletedAtUtc == null);
+
+            if (projectId.HasValue)
+            {
+                query = query.Where(te => te.ProjectId == projectId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(employeeUserId))
+            {
+                query = query.Where(te => te.UserId == employeeUserId);
+            }
+
+            if (from.HasValue)
+            {
+                query = query.Where(te => te.EntryDate >= from.Value.Date);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(te => te.EntryDate <= to.Value.Date);
+            }
+
+            return await query
+                .Select(te => new TimeSummaryRowDto
+                {
+                    UserId = te.UserId,
+                    ProjectId = te.ProjectId,
+                    EntryDate = te.EntryDate,
+                    DurationMinutes = te.DurationMinutes
+                })
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         private IQueryable<TimeEntry> BuildManagedProjectsQuery(
             string managerUserId,
             int? projectId,
