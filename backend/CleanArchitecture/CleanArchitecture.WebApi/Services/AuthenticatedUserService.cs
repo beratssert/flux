@@ -9,8 +9,10 @@ namespace CleanArchitecture.WebApi.Services
         public AuthenticatedUserService(IHttpContextAccessor httpContextAccessor)
         {
             UserId = httpContextAccessor.HttpContext?.User?.FindFirstValue("uid");
+            Role = httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Role);
         }
 
         public string UserId { get; }
+        public string Role { get; }
     }
 }

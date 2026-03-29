@@ -13,12 +13,13 @@ namespace CleanArchitecture.Infrastructure.Seeds
             //Seed Default User
             var defaultUser = new ApplicationUser
             {
-                UserName = "basicuser",
-                Email = "basicuser@gmail.com",
+                UserName = "employee",
+                Email = "employee@flux.local",
                 FirstName = "John",
                 LastName = "Doe",
                 EmailConfirmed = true,
-                PhoneNumberConfirmed = true
+                PhoneNumberConfirmed = true,
+                Status = UserStatus.Active.ToString()
             };
             if (userManager.Users.All(u => u.Id != defaultUser.Id))
             {
@@ -26,7 +27,7 @@ namespace CleanArchitecture.Infrastructure.Seeds
                 if (user == null)
                 {
                     await userManager.CreateAsync(defaultUser, "123Pa$$word!");
-                    await userManager.AddToRoleAsync(defaultUser, Roles.Basic.ToString());
+                    await userManager.AddToRoleAsync(defaultUser, Roles.Employee.ToString());
                 }
 
             }

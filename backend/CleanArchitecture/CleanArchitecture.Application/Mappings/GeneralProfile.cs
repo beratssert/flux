@@ -1,5 +1,9 @@
 ﻿using AutoMapper;
+using CleanArchitecture.Core.DTOs.TimeEntries;
 using CleanArchitecture.Core.Entities;
+using CleanArchitecture.Core.Features.TimeEntries.Queries.GetAllTimeEntries;
+using CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamPeriodSummary;
+using CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamProjectSummary;
 using CleanArchitecture.Core.Features.Categories.Queries.GetAllCategories;
 using CleanArchitecture.Core.Features.Products.Commands.CreateProduct;
 using CleanArchitecture.Core.Features.Products.Queries.GetAllProducts;
@@ -15,6 +19,10 @@ namespace CleanArchitecture.Core.Mappings
             CreateMap<GetAllProductsQuery, GetAllProductsParameter>();
             CreateMap<GetAllCategoriesQuery, GetAllCategoriesParameter>();
             CreateMap<Category, GetAllCategoriesViewModel>().ReverseMap();
+            CreateMap<GetAllTimeEntriesQuery, GetAllTimeEntriesParameter>();
+            CreateMap<TimeEntry, GetAllTimeEntriesViewModel>();
+            CreateMap<TeamProjectSummaryDto, GetTeamProjectSummaryViewModel>();
+            CreateMap<TeamPeriodSummaryDto, GetTeamPeriodSummaryViewModel>();
         }
     }
 }
