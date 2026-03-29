@@ -33,6 +33,13 @@ namespace CleanArchitecture.WebApi.Extensions
             {
                 operation.Parameters.Remove(versionParameter);
             }
+
+            var legacyPageNumber = operation.Parameters.FirstOrDefault(p => p.Name == "pageNumber");
+            var canonicalPage = operation.Parameters.FirstOrDefault(p => p.Name == "page");
+            if (legacyPageNumber != null && canonicalPage != null)
+            {
+                operation.Parameters.Remove(legacyPageNumber);
+            }
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿using CleanArchitecture.Core.Exceptions;
-using CleanArchitecture.Core.Wrappers;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -28,35 +27,45 @@ namespace CleanArchitecture.WebApi.Middlewares
             {
                 var response = context.Response;
                 response.ContentType = "application/json";
-                var errorResponse = new ErrorResponse();
-
+                ProblemDetails problemDetails;
 
                 switch (error)
                 {
                     case Core.Exceptions.ApiException e:
-                        // custom application error
                         response.StatusCode = (int)HttpStatusCode.BadRequest;
-                        errorResponse.Message = e.Message;
+                        problemDetails = CreateProblemDetails(response.StatusCode, "Bad Request", e.Message, context);
                         break;
                     case ValidationException e:
-                        // custom application error
                         response.StatusCode = (int)HttpStatusCode.BadRequest;
-                        errorResponse.Message ="Some validation errors occured.";
-                        errorResponse.Errors = e.Errors;
+                        problemDetails = CreateProblemDetails(response.StatusCode, "Validation Error", "Some validation errors occurred.", context);
+                        problemDetails.Extensions["errors"] = e.Errors;
                         break;
                     case KeyNotFoundException e:
-                        // not found error
                         response.StatusCode = (int)HttpStatusCode.NotFound;
+                        problemDetails = CreateProblemDetails(response.StatusCode, "Not Found", e.Message, context);
                         break;
                     default:
-                        // unhandled error
                         response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                        problemDetails = CreateProblemDetails(response.StatusCode, "Internal Server Error", "An unexpected error occurred.", context);
                         break;
                 }
-                var result = JsonSerializer.Serialize(errorResponse);
+
+                var result = JsonSerializer.Serialize(problemDetails);
 
                 await response.WriteAsync(result);
             }
+        }
+
+        private static ProblemDetails CreateProblemDetails(int statusCode, string title, string detail, HttpContext context)
+        {
+            return new ProblemDetails
+            {
+                Status = statusCode,
+                Title = title,
+                Detail = detail,
+                Instance = context.Request.Path,
+                Type = $"https://httpstatuses.com/{statusCode}"
+            };
         }
     }
 }

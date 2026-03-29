@@ -62,8 +62,6 @@ public class TimeTrackerIntegrationTests
         var projectId = await GetAssignedProjectIdAsync(employeeId);
 
         var now = DateTime.UtcNow;
-        var start = now.AddHours(-2);
-        var end = now.AddHours(-1);
 
         using var createReq = new HttpRequestMessage(HttpMethod.Post, "/api/v1/TimeEntries")
         {
@@ -71,8 +69,7 @@ public class TimeTrackerIntegrationTests
             {
                 projectId,
                 entryDate = now.Date,
-                startTimeUtc = start,
-                endTimeUtc = end,
+                durationMinutes = 17,
                 description = "integration-audit-check",
                 isBillable = true
             })

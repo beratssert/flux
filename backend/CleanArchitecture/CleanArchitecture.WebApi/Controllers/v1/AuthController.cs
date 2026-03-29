@@ -21,6 +21,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
         [AllowAnonymous]
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
             var origin = Request.Headers["origin"].ToString();
@@ -30,6 +33,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
         [AllowAnonymous]
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status423Locked)]
         public async Task<IActionResult> Login(AuthenticationRequest request)
         {
             return Ok(await _accountService.AuthenticateAsync(request, GenerateIPAddress()));

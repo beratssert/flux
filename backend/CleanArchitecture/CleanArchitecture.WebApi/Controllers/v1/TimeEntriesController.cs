@@ -8,6 +8,7 @@ using CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamTimeEntries;
 using CleanArchitecture.Core.Features.TimeEntries.Queries.GetTimeEntryById;
 using CleanArchitecture.Core.Wrappers;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -20,6 +21,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
     {
         [HttpGet]
         [Authorize(Policy = "TimeEntries.Manage.Self")]
+        [ProducesResponseType(typeof(PagedResponse<GetAllTimeEntriesViewModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<PagedResponse<GetAllTimeEntriesViewModel>> Get([FromQuery] GetAllTimeEntriesParameter filter)
         {
             return await Mediator.Send(new GetAllTimeEntriesQuery
@@ -37,6 +41,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
 
         [HttpGet("team")]
         [Authorize(Policy = "TimeEntries.Read.Team")]
+        [ProducesResponseType(typeof(PagedResponse<GetAllTimeEntriesViewModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<PagedResponse<GetAllTimeEntriesViewModel>> GetTeam([FromQuery] GetTeamTimeEntriesParameter filter)
         {
             return await Mediator.Send(new GetTeamTimeEntriesQuery
@@ -55,6 +62,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
 
         [HttpGet("team/summary/projects")]
         [Authorize(Policy = "TimeEntries.Read.Team")]
+        [ProducesResponseType(typeof(List<GetTeamProjectSummaryViewModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<List<GetTeamProjectSummaryViewModel>> GetTeamProjectSummary([FromQuery] GetTeamProjectSummaryParameter filter)
         {
             return await Mediator.Send(new GetTeamProjectSummaryQuery
@@ -67,6 +77,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
 
         [HttpGet("team/summary/period")]
         [Authorize(Policy = "TimeEntries.Read.Team")]
+        [ProducesResponseType(typeof(List<GetTeamPeriodSummaryViewModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<List<GetTeamPeriodSummaryViewModel>> GetTeamPeriodSummary([FromQuery] GetTeamPeriodSummaryParameter filter)
         {
             return await Mediator.Send(new GetTeamPeriodSummaryQuery
@@ -80,6 +93,10 @@ namespace CleanArchitecture.WebApi.Controllers.v1
 
         [HttpGet("{id:int}")]
         [Authorize(Policy = "TimeEntries.Manage.Self")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Get(int id)
         {
             return Ok(await Mediator.Send(new GetTimeEntryByIdQuery { Id = id }));
@@ -87,6 +104,10 @@ namespace CleanArchitecture.WebApi.Controllers.v1
 
         [HttpPost]
         [Authorize(Policy = "TimeEntries.Manage.Self")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Post(CreateTimeEntryCommand command)
         {
             return Ok(await Mediator.Send(command));
@@ -94,6 +115,11 @@ namespace CleanArchitecture.WebApi.Controllers.v1
 
         [HttpPut("{id}")]
         [Authorize(Policy = "TimeEntries.Manage.Self")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Put(int id, UpdateTimeEntryCommand command)
         {
             if (id != command.Id)
@@ -106,6 +132,11 @@ namespace CleanArchitecture.WebApi.Controllers.v1
 
         [HttpDelete("{id}")]
         [Authorize(Policy = "TimeEntries.Manage.Self")]
+        [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
             return Ok(await Mediator.Send(new DeleteTimeEntryByIdCommand { Id = id }));
