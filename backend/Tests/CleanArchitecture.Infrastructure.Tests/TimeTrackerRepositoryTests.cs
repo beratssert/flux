@@ -284,5 +284,76 @@ namespace CleanArchitecture.Infrastructure.Tests
             Assert.Equal(40, result[1].DurationMinutes);
             Assert.All(result, r => Assert.True(r.IsBillable));
         }
+
+        [Fact]
+        public async Task GetSummaryRowsByUserAsync_WhenAssignmentInactive_ShouldStillReturnHistoricalRows()
+        {
+            const string userId = "employee-h1";
+            const int projectId = 500;
+
+            _context.Projects.Add(new Project { Id = projectId, Name = "P-Historical", ManagerUserId = "manager-h1", Status = "Active" });
+            _context.ProjectAssignments.Add(new ProjectAssignment
+            {
+                UserId = userId,
+                ProjectId = projectId,
+                IsActive = false,
+                UnassignedAtUtc = DateTime.UtcNow.AddDays(-1)
+            });
+            _context.TimeEntries.Add(new TimeEntry
+            {
+                UserId = userId,
+                ProjectId = projectId,
+                EntryDate = DateTime.UtcNow.Date.AddDays(-7),
+                DurationMinutes = 75,
+                SourceType = "Manual"
+            });
+
+            await _context.SaveChangesAsync();
+
+            var repository = new TimeEntryRepositoryAsync(_context);
+            var rows = await repository.GetSummaryRowsByUserAsync(userId);
+
+            Assert.Single(rows);
+            Assert.Equal(projectId, rows[0].ProjectId);
+            Assert.Equal(75, rows[0].DurationMinutes);
+        }
+
+        [Fact]
+        public async Task GetSummaryRowsByManagedProjectsAsync_WhenEmployeeUnassigned_ShouldStillReturnHistoricalRows()
+        {
+            const string managerUserId = "manager-h2";
+            const string employeeUserId = "employee-h2";
+            const int projectId = 501;
+
+            _context.Projects.Add(new Project { Id = projectId, Name = "P-Managed-Historical", ManagerUserId = managerUserId, Status = "Active" });
+            _context.ProjectAssignments.Add(new ProjectAssignment
+            {
+                UserId = employeeUserId,
+                ProjectId = projectId,
+                IsActive = false,
+                UnassignedAtUtc = DateTime.UtcNow.AddDays(-3)
+            });
+            _context.TimeEntries.Add(new TimeEntry
+            {
+                UserId = employeeUserId,
+                ProjectId = projectId,
+                EntryDate = DateTime.UtcNow.Date.AddDays(-10),
+                DurationMinutes = 95,
+                SourceType = "Manual"
+            });
+
+            await _context.SaveChangesAsync();
+
+            var repository = new TimeEntryRepositoryAsync(_context);
+            var rows = await repository.GetSummaryRowsByManagedProjectsAsync(
+                managerUserId,
+                projectId: projectId,
+                employeeUserId: employeeUserId);
+
+            Assert.Single(rows);
+            Assert.Equal(employeeUserId, rows[0].UserId);
+            Assert.Equal(projectId, rows[0].ProjectId);
+            Assert.Equal(95, rows[0].DurationMinutes);
+        }
     }
 }
