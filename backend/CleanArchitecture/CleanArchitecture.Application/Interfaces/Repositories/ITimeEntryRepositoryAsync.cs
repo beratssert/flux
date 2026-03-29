@@ -10,10 +10,17 @@ namespace CleanArchitecture.Core.Interfaces.Repositories
     {
         Task<TimeEntry> GetByIdAndUserIdAsync(int id, string userId);
         Task<IReadOnlyList<TimeEntry>> GetPagedByUserIdAsync(string userId, int pageNumber, int pageSize);
+        Task<int> CountByUserIdAsync(string userId);
         Task<IReadOnlyList<TimeEntry>> GetPagedByManagedProjectsAsync(
             string managerUserId,
             int pageNumber,
             int pageSize,
+            int? projectId = null,
+            string employeeUserId = null,
+            DateTime? from = null,
+            DateTime? to = null);
+        Task<int> CountByManagedProjectsAsync(
+            string managerUserId,
             int? projectId = null,
             string employeeUserId = null,
             DateTime? from = null,

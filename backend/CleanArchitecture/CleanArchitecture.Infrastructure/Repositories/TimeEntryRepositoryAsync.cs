@@ -39,6 +39,11 @@ namespace CleanArchitecture.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+            public Task<int> CountByUserIdAsync(string userId)
+            {
+                return _timeEntries.CountAsync(te => te.UserId == userId && te.DeletedAtUtc == null);
+            }
+
         public async Task<IReadOnlyList<TimeEntry>> GetPagedByManagedProjectsAsync(
             string managerUserId,
             int pageNumber,
@@ -48,34 +53,7 @@ namespace CleanArchitecture.Infrastructure.Repositories
             DateTime? from = null,
             DateTime? to = null)
         {
-            var managedProjectIds = _projects
-                .Where(p => p.ManagerUserId == managerUserId)
-                .Select(p => p.Id);
-
-            var query = _timeEntries.Where(te =>
-                te.DeletedAtUtc == null &&
-                managedProjectIds.Contains(te.ProjectId) &&
-                te.UserId != managerUserId);
-
-            if (projectId.HasValue)
-            {
-                query = query.Where(te => te.ProjectId == projectId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(employeeUserId))
-            {
-                query = query.Where(te => te.UserId == employeeUserId);
-            }
-
-            if (from.HasValue)
-            {
-                query = query.Where(te => te.EntryDate >= from.Value.Date);
-            }
-
-            if (to.HasValue)
-            {
-                query = query.Where(te => te.EntryDate <= to.Value.Date);
-            }
+            var query = BuildManagedProjectsQuery(managerUserId, projectId, employeeUserId, from, to);
 
             return await query
                 .OrderByDescending(te => te.EntryDate)
@@ -84,6 +62,16 @@ namespace CleanArchitecture.Infrastructure.Repositories
                 .Take(pageSize)
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        public Task<int> CountByManagedProjectsAsync(
+            string managerUserId,
+            int? projectId = null,
+            string employeeUserId = null,
+            DateTime? from = null,
+            DateTime? to = null)
+        {
+            return BuildManagedProjectsQuery(managerUserId, projectId, employeeUserId, from, to).CountAsync();
         }
 
         public async Task<IReadOnlyList<TeamProjectSummaryDto>> GetProjectSummaryByManagedProjectsAsync(
@@ -197,6 +185,45 @@ namespace CleanArchitecture.Infrastructure.Repositories
             }
 
             return query.AnyAsync();
+        }
+
+        private IQueryable<TimeEntry> BuildManagedProjectsQuery(
+            string managerUserId,
+            int? projectId,
+            string employeeUserId,
+            DateTime? from,
+            DateTime? to)
+        {
+            var managedProjectIds = _projects
+                .Where(p => p.ManagerUserId == managerUserId)
+                .Select(p => p.Id);
+
+            var query = _timeEntries.Where(te =>
+                te.DeletedAtUtc == null &&
+                managedProjectIds.Contains(te.ProjectId) &&
+                te.UserId != managerUserId);
+
+            if (projectId.HasValue)
+            {
+                query = query.Where(te => te.ProjectId == projectId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(employeeUserId))
+            {
+                query = query.Where(te => te.UserId == employeeUserId);
+            }
+
+            if (from.HasValue)
+            {
+                query = query.Where(te => te.EntryDate >= from.Value.Date);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(te => te.EntryDate <= to.Value.Date);
+            }
+
+            return query;
         }
     }
 }

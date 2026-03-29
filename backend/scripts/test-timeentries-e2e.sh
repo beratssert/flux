@@ -79,7 +79,7 @@ manager_status=$(curl -s -o "$manager_body_file" -w "%{http_code}" "$base_url/ap
 manager_body=$(cat "$manager_body_file")
 rm -f "$manager_body_file"
 assert_status "$manager_status" "200" "Manager team endpoint returns 200"
-assert_contains "$manager_body" '"data":' "Manager team response includes data array"
+assert_contains "$manager_body" '"items":' "Manager team response includes items array"
 assert_contains "$manager_body" '"userId":' "Manager team response includes employee userId"
 
 echo "[INFO] Employee cannot access manager team endpoint"
@@ -88,7 +88,7 @@ assert_status "$employee_status" "403" "Employee blocked from team endpoint"
 
 echo "[INFO] Team endpoint supports employee filter"
 filtered_body=$(curl -s "$base_url/api/v1/TimeEntries/team?pageNumber=1&pageSize=10&employeeUserId=does-not-exist" -H "Authorization: Bearer $manager_token")
-assert_contains "$filtered_body" '"data":[]' "Filter by unknown employee returns empty team list"
+assert_contains "$filtered_body" '"items":[]' "Filter by unknown employee returns empty team list"
 
 echo "[INFO] Manager can access project summary"
 project_summary_status=$(curl -s -o /dev/null -w "%{http_code}" "$base_url/api/v1/TimeEntries/team/summary/projects" -H "Authorization: Bearer $manager_token")

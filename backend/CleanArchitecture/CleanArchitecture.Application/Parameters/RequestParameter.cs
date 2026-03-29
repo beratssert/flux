@@ -7,12 +7,19 @@
         public RequestParameter()
         {
             this.PageNumber = 1;
-            this.PageSize = 10;
+            this.PageSize = 20;
         }
         public RequestParameter(int pageNumber, int pageSize)
         {
             this.PageNumber = pageNumber < 1 ? 1 : pageNumber;
-            this.PageSize = pageSize > 10 ? 10 : pageSize;
+            if (pageSize < 1)
+            {
+                this.PageSize = 20;
+            }
+            else
+            {
+                this.PageSize = pageSize > 100 ? 100 : pageSize;
+            }
         }
     }
 }

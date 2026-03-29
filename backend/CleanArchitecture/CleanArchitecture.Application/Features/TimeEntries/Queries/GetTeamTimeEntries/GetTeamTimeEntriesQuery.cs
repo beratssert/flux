@@ -46,9 +46,15 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamTimeEntries
                 request.EmployeeUserId,
                 request.From,
                 request.To);
+            var totalCount = await _timeEntryRepository.CountByManagedProjectsAsync(
+                _authenticatedUserService.UserId,
+                request.ProjectId,
+                request.EmployeeUserId,
+                request.From,
+                request.To);
 
             var vm = _mapper.Map<List<GetAllTimeEntriesViewModel>>(entries);
-            return new PagedResponse<GetAllTimeEntriesViewModel>(vm, request.PageNumber, request.PageSize);
+            return new PagedResponse<GetAllTimeEntriesViewModel>(vm, request.PageNumber, request.PageSize, totalCount);
         }
     }
 }

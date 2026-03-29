@@ -35,8 +35,9 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetAllTimeEntries
         {
             var validFilter = _mapper.Map<GetAllTimeEntriesParameter>(request);
             var timeEntries = await _timeEntryRepository.GetPagedByUserIdAsync(_authenticatedUserService.UserId, validFilter.PageNumber, validFilter.PageSize);
+            var totalCount = await _timeEntryRepository.CountByUserIdAsync(_authenticatedUserService.UserId);
             var vm = _mapper.Map<List<GetAllTimeEntriesViewModel>>(timeEntries);
-            return new PagedResponse<GetAllTimeEntriesViewModel>(vm, validFilter.PageNumber, validFilter.PageSize);
+            return new PagedResponse<GetAllTimeEntriesViewModel>(vm, validFilter.PageNumber, validFilter.PageSize, totalCount);
         }
     }
 }

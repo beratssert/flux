@@ -149,6 +149,10 @@ namespace CleanArchitecture.UnitTests
                 .Setup(r => r.GetPagedByManagedProjectsAsync("manager-1", 2, 5, 100, "employee-1", from, to))
                 .ReturnsAsync(repositoryEntries);
 
+            _timeEntryRepository
+                .Setup(r => r.CountByManagedProjectsAsync("manager-1", 100, "employee-1", from, to))
+                .ReturnsAsync(7);
+
             mapper
                 .Setup(m => m.Map<List<GetAllTimeEntriesViewModel>>(repositoryEntries))
                 .Returns(mappedEntries);
@@ -170,15 +174,25 @@ namespace CleanArchitecture.UnitTests
 
             var result = await handler.Handle(query, CancellationToken.None);
 
-            Assert.Equal(2, result.PageNumber);
+            Assert.Equal(2, result.Page);
             Assert.Equal(5, result.PageSize);
-            Assert.Equal(2, result.Data.Count);
-            Assert.Equal("employee-1", result.Data[0].UserId);
+            Assert.Equal(7, result.TotalCount);
+            Assert.Equal(2, result.TotalPages);
+            Assert.True(result.HasPrevious);
+            Assert.False(result.HasNext);
+            Assert.Equal(2, result.Items.Count);
+            Assert.Equal("employee-1", result.Items[0].UserId);
 
             _timeEntryRepository.Verify(r => r.GetPagedByManagedProjectsAsync(
                 "manager-1",
                 2,
                 5,
+                100,
+                "employee-1",
+                from,
+                to), Times.Once);
+            _timeEntryRepository.Verify(r => r.CountByManagedProjectsAsync(
+                "manager-1",
                 100,
                 "employee-1",
                 from,
@@ -195,6 +209,10 @@ namespace CleanArchitecture.UnitTests
                 .Setup(r => r.GetPagedByManagedProjectsAsync("manager-1", 1, 10, null, null, null, null))
                 .ReturnsAsync(new List<TimeEntry>());
 
+            _timeEntryRepository
+                .Setup(r => r.CountByManagedProjectsAsync("manager-1", null, null, null, null))
+                .ReturnsAsync(0);
+
             mapper
                 .Setup(m => m.Map<List<GetAllTimeEntriesViewModel>>(It.IsAny<List<TimeEntry>>()))
                 .Returns(new List<GetAllTimeEntriesViewModel>());
@@ -207,9 +225,13 @@ namespace CleanArchitecture.UnitTests
             var result = await handler.Handle(new GetTeamTimeEntriesQuery { PageNumber = 1, PageSize = 10 }, CancellationToken.None);
 
             Assert.NotNull(result);
-            Assert.Empty(result.Data);
-            Assert.Equal(1, result.PageNumber);
+            Assert.Empty(result.Items);
+            Assert.Equal(1, result.Page);
             Assert.Equal(10, result.PageSize);
+            Assert.Equal(0, result.TotalCount);
+            Assert.Equal(0, result.TotalPages);
+            Assert.False(result.HasNext);
+            Assert.False(result.HasPrevious);
         }
 
         [Fact]
