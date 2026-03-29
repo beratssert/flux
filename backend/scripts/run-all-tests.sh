@@ -8,6 +8,7 @@ build_stack="${BUILD_STACK:-false}"
 cpu_limit="${TEST_CPU_LIMIT:-2}"
 memory_limit="${TEST_MEMORY_LIMIT:-4g}"
 skip_e2e="${SKIP_E2E:-false}"
+skip_integration="${SKIP_INTEGRATION:-false}"
 
 cd "$ROOT_DIR"
 
@@ -23,7 +24,7 @@ else
   docker compose up -d sqlserver webapi
 fi
 
-echo "[3/5] Running unit + infrastructure tests in single SDK container..."
+echo "[3/6] Running unit + infrastructure tests in single SDK container..."
 docker run --rm \
   --cpus="$cpu_limit" \
   --memory="$memory_limit" \
@@ -38,17 +39,37 @@ docker run --rm \
   dotnet test Tests/CleanArchitecture.Infrastructure.Tests/CleanArchitecture.Infrastructure.Tests.csproj --no-restore --nologo --verbosity minimal -m:1 -- RunConfiguration.MaxCpuCount=1
 '
 
+if [[ "$skip_integration" == "true" ]]; then
+  echo "[4/6] Skipping integration tests (SKIP_INTEGRATION=true)"
+else
+  echo "[4/6] Running API integration tests (JWT + SQL + authorization)..."
+  docker run --rm \
+    --cpus="$cpu_limit" \
+    --memory="$memory_limit" \
+    --network backend_default \
+    -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+    -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+    -e INTEGRATION_API_BASE_URL="http://flux-webapi:8080" \
+    -e INTEGRATION_SQL_CONNECTION="Server=flux-sqlserver,1433;Database=CleanArchitectureApplicationDb;User Id=sa;Password=Your_strong_password_123;TrustServerCertificate=True;Encrypt=False" \
+    -v "$ROOT_DIR":/src \
+    -v flux-nuget-cache:/root/.nuget/packages \
+    -w /src \
+    "$SDK_IMAGE" bash -lc '
+    dotnet test Tests/CleanArchitecture.IntegrationTests/CleanArchitecture.IntegrationTests.csproj --no-restore --nologo --verbosity minimal -m:1 -- RunConfiguration.MaxCpuCount=1
+  '
+fi
+
 if [[ "$skip_e2e" == "true" ]]; then
-  echo "[4/5] Skipping E2E tests (SKIP_E2E=true)"
-  echo "[5/5] Skipping E2E tests (SKIP_E2E=true)"
+  echo "[5/6] Skipping E2E tests (SKIP_E2E=true)"
+  echo "[6/6] Skipping E2E tests (SKIP_E2E=true)"
   echo "All selected tests passed."
   exit 0
 fi
 
-echo "[4/5] Running auth E2E tests..."
+echo "[5/6] Running auth E2E tests..."
 RESET_STACK=false BUILD_STACK=false bash scripts/test-auth-e2e.sh
 
-echo "[5/5] Running time entries E2E tests..."
+echo "[6/6] Running time entries E2E tests..."
 RESET_STACK=false BUILD_STACK=false bash scripts/test-timeentries-e2e.sh
 
 echo "All tests passed."
