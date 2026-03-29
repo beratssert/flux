@@ -1,11 +1,13 @@
 using CleanArchitecture.Core;
 using CleanArchitecture.Core.Interfaces;
 using CleanArchitecture.Infrastructure;
+using CleanArchitecture.Infrastructure.Contexts;
 using CleanArchitecture.Infrastructure.Models;
 using CleanArchitecture.WebApi.Extensions;
 using CleanArchitecture.WebApi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,10 +17,6 @@ using Serilog;
 using System;
 
 var builder = WebApplication.CreateBuilder(args);
-
-//Add configurations
-builder.Configuration.AddJsonFile("appsettings.json");
-builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true);
 
 // Add services to the container.
 builder.Services.AddApplicationLayer();
@@ -70,14 +68,24 @@ using (var scope = app.Services.CreateScope())
     var loggerFactory = services.GetRequiredService<ILoggerFactory>();
     try
     {
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+            try
+            {
+                dbContext.Database.Migrate();
+            }
+            catch
+            {
+                dbContext.Database.EnsureCreated();
+            }
+
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
         await CleanArchitecture.Infrastructure.Seeds.DefaultRoles.SeedAsync(userManager, roleManager);
         await CleanArchitecture.Infrastructure.Seeds.DefaultSuperAdmin.SeedAsync(userManager, roleManager);
-        await CleanArchitecture.Infrastructure.Seeds.DefaultAdmin.SeedAsync(userManager, roleManager);
-        await CleanArchitecture.Infrastructure.Seeds.DefaultModerator.SeedAsync(userManager, roleManager);
         await CleanArchitecture.Infrastructure.Seeds.DefaultBasicUser.SeedAsync(userManager, roleManager);
+            await CleanArchitecture.Infrastructure.Seeds.DefaultManagerUser.SeedAsync(userManager);
+        await CleanArchitecture.Infrastructure.Seeds.DefaultTimeTrackerData.SeedAsync(dbContext, userManager);
         Log.Information("Finished Seeding Default Data");
         Log.Information("Application Starting");
     }

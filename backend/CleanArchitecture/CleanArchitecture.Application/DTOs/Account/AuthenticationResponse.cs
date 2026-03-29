@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 using System.Text.Json.Serialization;
 
 namespace CleanArchitecture.Core.DTOs.Account
@@ -11,6 +12,8 @@ namespace CleanArchitecture.Core.DTOs.Account
         public List<string> Roles { get; set; }
         public bool IsVerified { get; set; }
         public string JWToken { get; set; }
+        public string AccessToken { get; set; }
+        public DateTime ExpiresAtUtc { get; set; }
         [JsonIgnore]
         public string RefreshToken { get; set; }
     }

@@ -54,6 +54,8 @@ namespace CleanArchitecture.WebApi.Extensions
                         }, new List<string>()
                     },
                 });
+                c.OperationFilter<RemoveVersionParameterFilter>();
+                c.DocumentFilter<SwaggerDefaultVersionPathFilter>();
             });
         }
         public static void AddApiVersioningExtension(this IServiceCollection services)
