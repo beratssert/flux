@@ -3,6 +3,7 @@ using CleanArchitecture.Core.Interfaces;
 using CleanArchitecture.Core.Interfaces.Repositories;
 using MediatR;
 using System;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,15 +26,18 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Commands.UpdateTimeEntry
         private readonly ITimeEntryRepositoryAsync _timeEntryRepository;
         private readonly IProjectAssignmentRepositoryAsync _projectAssignmentRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
+        private readonly IAuditService _auditService;
 
         public UpdateTimeEntryCommandHandler(
             ITimeEntryRepositoryAsync timeEntryRepository,
             IProjectAssignmentRepositoryAsync projectAssignmentRepository,
-            IAuthenticatedUserService authenticatedUserService)
+            IAuthenticatedUserService authenticatedUserService,
+            IAuditService auditService = null)
         {
             _timeEntryRepository = timeEntryRepository;
             _projectAssignmentRepository = projectAssignmentRepository;
             _authenticatedUserService = authenticatedUserService;
+            _auditService = auditService;
         }
 
         public async Task<int> Handle(UpdateTimeEntryCommand request, CancellationToken cancellationToken)
@@ -76,6 +80,29 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Commands.UpdateTimeEntry
             entry.IsBillable = request.IsBillable;
 
             await _timeEntryRepository.UpdateAsync(entry);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "TimeEntry",
+                    entry.Id.ToString(),
+                    "Update",
+                    "Manual time entry updated.",
+                    null,
+                    JsonSerializer.Serialize(new
+                    {
+                        entry.UserId,
+                        entry.ProjectId,
+                        entry.EntryDate,
+                        entry.StartTimeUtc,
+                        entry.EndTimeUtc,
+                        entry.DurationMinutes,
+                        entry.IsBillable,
+                        entry.SourceType,
+                        entry.IsLocked
+                    }));
+            }
+
             return entry.Id;
         }
 

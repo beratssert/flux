@@ -28,6 +28,7 @@ namespace CleanArchitecture.Infrastructure.Contexts
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
         public DbSet<RunningTimer> RunningTimers { get; set; }
         public DbSet<TimeEntry> TimeEntries { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
         {
@@ -141,6 +142,18 @@ namespace CleanArchitecture.Infrastructure.Contexts
                     .HasForeignKey(te => te.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(te => new { te.UserId, te.EntryDate });
+            });
+
+            builder.Entity<AuditLog>(entity =>
+            {
+                entity.Property(a => a.EntityName).IsRequired().HasMaxLength(100);
+                entity.Property(a => a.EntityId).IsRequired().HasMaxLength(100);
+                entity.Property(a => a.ActionType).IsRequired().HasMaxLength(50);
+                entity.Property(a => a.ActorUserId).HasMaxLength(450);
+                entity.Property(a => a.OldValuesJson).HasMaxLength(4000);
+                entity.Property(a => a.NewValuesJson).HasMaxLength(4000);
+                entity.Property(a => a.Note).HasMaxLength(1000);
+                entity.HasIndex(a => a.OccurredAtUtc);
             });
 
             base.OnModelCreating(builder);

@@ -4,6 +4,7 @@ using CleanArchitecture.Core.Interfaces;
 using CleanArchitecture.Core.Interfaces.Repositories;
 using MediatR;
 using System;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,15 +22,18 @@ namespace CleanArchitecture.Core.Features.Timers.Commands.StartTimer
         private readonly IRunningTimerRepositoryAsync _runningTimerRepository;
         private readonly IProjectAssignmentRepositoryAsync _projectAssignmentRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
+        private readonly IAuditService _auditService;
 
         public StartTimerCommandHandler(
             IRunningTimerRepositoryAsync runningTimerRepository,
             IProjectAssignmentRepositoryAsync projectAssignmentRepository,
-            IAuthenticatedUserService authenticatedUserService)
+            IAuthenticatedUserService authenticatedUserService,
+            IAuditService auditService = null)
         {
             _runningTimerRepository = runningTimerRepository;
             _projectAssignmentRepository = projectAssignmentRepository;
             _authenticatedUserService = authenticatedUserService;
+            _auditService = auditService;
         }
 
         public async Task<int> Handle(StartTimerCommand request, CancellationToken cancellationToken)
@@ -62,6 +66,24 @@ namespace CleanArchitecture.Core.Features.Timers.Commands.StartTimer
             };
 
             await _runningTimerRepository.AddAsync(timer);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "RunningTimer",
+                    timer.Id.ToString(),
+                    "Start",
+                    "Timer started.",
+                    null,
+                    JsonSerializer.Serialize(new
+                    {
+                        timer.UserId,
+                        timer.ProjectId,
+                        timer.StartedAtUtc,
+                        timer.IsBillable
+                    }));
+            }
+
             return timer.Id;
         }
     }

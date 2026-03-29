@@ -15,12 +15,23 @@ namespace CleanArchitecture.UnitTests
         private readonly Mock<IRunningTimerRepositoryAsync> _runningTimerRepository;
         private readonly Mock<ITimeEntryRepositoryAsync> _timeEntryRepository;
         private readonly Mock<IAuthenticatedUserService> _authenticatedUserService;
+        private readonly Mock<IAuditService> _auditService;
 
         public Timers()
         {
             _runningTimerRepository = new Mock<IRunningTimerRepositoryAsync>();
             _timeEntryRepository = new Mock<ITimeEntryRepositoryAsync>();
             _authenticatedUserService = new Mock<IAuthenticatedUserService>();
+            _auditService = new Mock<IAuditService>();
+            _auditService
+                .Setup(a => a.WriteAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("user-1");
         }
 
@@ -34,7 +45,8 @@ namespace CleanArchitecture.UnitTests
             var handler = new StopTimerCommandHandler(
                 _runningTimerRepository.Object,
                 _timeEntryRepository.Object,
-                _authenticatedUserService.Object);
+                _authenticatedUserService.Object,
+                _auditService.Object);
 
             await Assert.ThrowsAsync<ApiException>(() => handler.Handle(new StopTimerCommand(), CancellationToken.None));
         }
@@ -62,7 +74,8 @@ namespace CleanArchitecture.UnitTests
             var handler = new StopTimerCommandHandler(
                 _runningTimerRepository.Object,
                 _timeEntryRepository.Object,
-                _authenticatedUserService.Object);
+                _authenticatedUserService.Object,
+                _auditService.Object);
 
             await Assert.ThrowsAsync<ApiException>(() => handler.Handle(new StopTimerCommand(), CancellationToken.None));
         }
@@ -99,7 +112,8 @@ namespace CleanArchitecture.UnitTests
             var handler = new StopTimerCommandHandler(
                 _runningTimerRepository.Object,
                 _timeEntryRepository.Object,
-                _authenticatedUserService.Object);
+                _authenticatedUserService.Object,
+                _auditService.Object);
 
             var result = await handler.Handle(new StopTimerCommand(), CancellationToken.None);
 
@@ -110,6 +124,13 @@ namespace CleanArchitecture.UnitTests
                 te.SourceType == "Timer" &&
                 te.DurationMinutes > 0)), Times.Once);
             _runningTimerRepository.Verify(r => r.DeleteAsync(timer), Times.Once);
+            _auditService.Verify(a => a.WriteAsync(
+                "TimeEntry",
+                "77",
+                "CreateFromTimer",
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()), Times.Once);
         }
 
         [Fact]

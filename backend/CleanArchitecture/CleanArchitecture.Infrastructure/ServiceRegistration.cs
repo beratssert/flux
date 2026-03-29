@@ -138,6 +138,7 @@ namespace CleanArchitecture.Infrastructure
             services.Configure<MailSettings>(configuration.GetSection("MailSettings"));
             services.AddTransient<IDateTimeService, DateTimeService>();
             services.AddTransient<IEmailService, EmailService>();
+            services.AddTransient<IAuditService, AuditService>();
 
 
             #region Repositories

@@ -4,6 +4,7 @@ using CleanArchitecture.Core.Interfaces;
 using CleanArchitecture.Core.Interfaces.Repositories;
 using MediatR;
 using System;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,15 +26,18 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Commands.CreateTimeEntry
         private readonly ITimeEntryRepositoryAsync _timeEntryRepository;
         private readonly IProjectAssignmentRepositoryAsync _projectAssignmentRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
+        private readonly IAuditService _auditService;
 
         public CreateTimeEntryCommandHandler(
             ITimeEntryRepositoryAsync timeEntryRepository,
             IProjectAssignmentRepositoryAsync projectAssignmentRepository,
-            IAuthenticatedUserService authenticatedUserService)
+            IAuthenticatedUserService authenticatedUserService,
+            IAuditService auditService = null)
         {
             _timeEntryRepository = timeEntryRepository;
             _projectAssignmentRepository = projectAssignmentRepository;
             _authenticatedUserService = authenticatedUserService;
+            _auditService = auditService;
         }
 
         public async Task<int> Handle(CreateTimeEntryCommand request, CancellationToken cancellationToken)
@@ -76,6 +80,28 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Commands.CreateTimeEntry
             };
 
             await _timeEntryRepository.AddAsync(entry);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "TimeEntry",
+                    entry.Id.ToString(),
+                    "Create",
+                    "Manual time entry created.",
+                    null,
+                    JsonSerializer.Serialize(new
+                    {
+                        entry.UserId,
+                        entry.ProjectId,
+                        entry.EntryDate,
+                        entry.StartTimeUtc,
+                        entry.EndTimeUtc,
+                        entry.DurationMinutes,
+                        entry.IsBillable,
+                        entry.SourceType
+                    }));
+            }
+
             return entry.Id;
         }
 

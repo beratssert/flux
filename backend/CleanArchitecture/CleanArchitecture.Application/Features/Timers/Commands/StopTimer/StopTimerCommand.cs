@@ -4,6 +4,7 @@ using CleanArchitecture.Core.Interfaces;
 using CleanArchitecture.Core.Interfaces.Repositories;
 using MediatR;
 using System;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,15 +19,18 @@ namespace CleanArchitecture.Core.Features.Timers.Commands.StopTimer
         private readonly IRunningTimerRepositoryAsync _runningTimerRepository;
         private readonly ITimeEntryRepositoryAsync _timeEntryRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
+        private readonly IAuditService _auditService;
 
         public StopTimerCommandHandler(
             IRunningTimerRepositoryAsync runningTimerRepository,
             ITimeEntryRepositoryAsync timeEntryRepository,
-            IAuthenticatedUserService authenticatedUserService)
+            IAuthenticatedUserService authenticatedUserService,
+            IAuditService auditService = null)
         {
             _runningTimerRepository = runningTimerRepository;
             _timeEntryRepository = timeEntryRepository;
             _authenticatedUserService = authenticatedUserService;
+            _auditService = auditService;
         }
 
         public async Task<int> Handle(StopTimerCommand request, CancellationToken cancellationToken)
@@ -72,6 +76,34 @@ namespace CleanArchitecture.Core.Features.Timers.Commands.StopTimer
 
             await _timeEntryRepository.AddAsync(entry);
             await _runningTimerRepository.DeleteAsync(activeTimer);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "TimeEntry",
+                    entry.Id.ToString(),
+                    "CreateFromTimer",
+                    "Time entry created by stopping active timer.",
+                    JsonSerializer.Serialize(new
+                    {
+                        RunningTimerId = activeTimer.Id,
+                        activeTimer.UserId,
+                        activeTimer.ProjectId,
+                        activeTimer.StartedAtUtc,
+                        EndedAtUtc = endedAtUtc
+                    }),
+                    JsonSerializer.Serialize(new
+                    {
+                        entry.UserId,
+                        entry.ProjectId,
+                        entry.EntryDate,
+                        entry.StartTimeUtc,
+                        entry.EndTimeUtc,
+                        entry.DurationMinutes,
+                        entry.IsBillable,
+                        entry.SourceType
+                    }));
+            }
 
             return entry.Id;
         }

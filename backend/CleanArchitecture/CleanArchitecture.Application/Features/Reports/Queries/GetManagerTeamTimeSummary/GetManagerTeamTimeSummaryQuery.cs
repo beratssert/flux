@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,13 +28,16 @@ namespace CleanArchitecture.Core.Features.Reports.Queries.GetManagerTeamTimeSumm
     {
         private readonly ITimeEntryRepositoryAsync _timeEntryRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
+        private readonly IAuditService _auditService;
 
         public GetManagerTeamTimeSummaryQueryHandler(
             ITimeEntryRepositoryAsync timeEntryRepository,
-            IAuthenticatedUserService authenticatedUserService)
+            IAuthenticatedUserService authenticatedUserService,
+            IAuditService auditService = null)
         {
             _timeEntryRepository = timeEntryRepository;
             _authenticatedUserService = authenticatedUserService;
+            _auditService = auditService;
         }
 
         public async Task<TimeSummaryResponse> Handle(GetManagerTeamTimeSummaryQuery request, CancellationToken cancellationToken)
@@ -64,7 +68,30 @@ namespace CleanArchitecture.Core.Features.Reports.Queries.GetManagerTeamTimeSumm
                 throw new ApiException("Only manager or admin can access team time summary.");
             }
 
-            return BuildSummary(rows, groupBy);
+            var response = BuildSummary(rows, groupBy);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "ManagerTeamTimeSummary",
+                    _authenticatedUserService.UserId,
+                    "Read",
+                    "Manager/admin accessed team time summary report.",
+                    null,
+                    JsonSerializer.Serialize(new
+                    {
+                        request.ProjectId,
+                        request.UserId,
+                        request.From,
+                        request.To,
+                        GroupBy = groupBy,
+                        RowCount = rows.Count,
+                        GroupCount = response.Groups.Count,
+                        response.TotalMinutes
+                    }));
+            }
+
+            return response;
         }
 
         private static string NormalizeGroupBy(string rawGroupBy, string[] allowed)

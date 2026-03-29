@@ -24,6 +24,7 @@ namespace CleanArchitecture.UnitTests
         private readonly Mock<ITimeEntryRepositoryAsync> _timeEntryRepository;
         private readonly Mock<IProjectAssignmentRepositoryAsync> _projectAssignmentRepository;
         private readonly Mock<IAuthenticatedUserService> _authenticatedUserService;
+        private readonly Mock<IAuditService> _auditService;
 
         public TimeEntries()
         {
@@ -31,6 +32,16 @@ namespace CleanArchitecture.UnitTests
             _timeEntryRepository = new Mock<ITimeEntryRepositoryAsync>();
             _projectAssignmentRepository = new Mock<IProjectAssignmentRepositoryAsync>();
             _authenticatedUserService = new Mock<IAuthenticatedUserService>();
+            _auditService = new Mock<IAuditService>();
+            _auditService
+                .Setup(a => a.WriteAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
             _authenticatedUserService.SetupGet(a => a.UserId).Returns("user-1");
             _authenticatedUserService.SetupGet(a => a.Role).Returns("Employee");
         }
@@ -45,7 +56,8 @@ namespace CleanArchitecture.UnitTests
             var handler = new CreateTimeEntryCommandHandler(
                 _timeEntryRepository.Object,
                 _projectAssignmentRepository.Object,
-                _authenticatedUserService.Object);
+                _authenticatedUserService.Object,
+                _auditService.Object);
 
             var command = new CreateTimeEntryCommand
             {
@@ -71,7 +83,8 @@ namespace CleanArchitecture.UnitTests
             var handler = new CreateTimeEntryCommandHandler(
                 _timeEntryRepository.Object,
                 _projectAssignmentRepository.Object,
-                _authenticatedUserService.Object);
+                _authenticatedUserService.Object,
+                _auditService.Object);
 
             var start = DateTime.UtcNow.Date.AddHours(9);
             var end = start.AddMinutes(30);
@@ -104,7 +117,8 @@ namespace CleanArchitecture.UnitTests
             var handler = new CreateTimeEntryCommandHandler(
                 _timeEntryRepository.Object,
                 _projectAssignmentRepository.Object,
-                _authenticatedUserService.Object);
+                _authenticatedUserService.Object,
+                _auditService.Object);
 
             var command = new CreateTimeEntryCommand
             {
@@ -123,6 +137,13 @@ namespace CleanArchitecture.UnitTests
                 te.ProjectId == command.ProjectId &&
                 te.DurationMinutes == 50 &&
                 te.SourceType == "Manual")), Times.Once);
+            _auditService.Verify(a => a.WriteAsync(
+                "TimeEntry",
+                "101",
+                "Create",
+                It.IsAny<string>(),
+                null,
+                It.IsAny<string>()), Times.Once);
         }
 
         [Fact]
@@ -233,7 +254,8 @@ namespace CleanArchitecture.UnitTests
             var handler = new GetTeamTimeEntriesQueryHandler(
                 _timeEntryRepository.Object,
                 _authenticatedUserService.Object,
-                mapper.Object);
+                mapper.Object,
+                _auditService.Object);
 
             var query = new GetTeamTimeEntriesQuery
             {
@@ -274,6 +296,13 @@ namespace CleanArchitecture.UnitTests
                 from,
                 to,
                 null), Times.Once);
+            _auditService.Verify(a => a.WriteAsync(
+                "TeamTimeEntries",
+                "manager-1",
+                "Read",
+                It.IsAny<string>(),
+                null,
+                It.IsAny<string>()), Times.Once);
         }
 
         [Fact]

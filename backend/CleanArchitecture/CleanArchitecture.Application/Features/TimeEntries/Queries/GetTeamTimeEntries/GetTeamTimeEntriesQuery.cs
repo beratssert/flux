@@ -7,6 +7,7 @@ using CleanArchitecture.Core.Interfaces.Repositories;
 using CleanArchitecture.Core.Wrappers;
 using MediatR;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,15 +31,18 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamTimeEntries
         private readonly ITimeEntryRepositoryAsync _timeEntryRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
         private readonly IMapper _mapper;
+        private readonly IAuditService _auditService;
 
         public GetTeamTimeEntriesQueryHandler(
             ITimeEntryRepositoryAsync timeEntryRepository,
             IAuthenticatedUserService authenticatedUserService,
-            IMapper mapper)
+            IMapper mapper,
+            IAuditService auditService = null)
         {
             _timeEntryRepository = timeEntryRepository;
             _authenticatedUserService = authenticatedUserService;
             _mapper = mapper;
+            _auditService = auditService;
         }
 
         public async Task<PagedResponse<GetAllTimeEntriesViewModel>> Handle(GetTeamTimeEntriesQuery request, CancellationToken cancellationToken)
@@ -71,6 +75,30 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamTimeEntries
                 request.IsBillable);
 
             var vm = _mapper.Map<List<GetAllTimeEntriesViewModel>>(entries);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "TeamTimeEntries",
+                    _authenticatedUserService.UserId,
+                    "Read",
+                    "Manager/admin accessed team time entries.",
+                    null,
+                    JsonSerializer.Serialize(new
+                    {
+                        request.PageNumber,
+                        request.PageSize,
+                        request.ProjectId,
+                        request.EmployeeUserId,
+                        request.From,
+                        request.To,
+                        request.IsBillable,
+                        request.SortBy,
+                        request.SortDir,
+                        TotalCount = totalCount
+                    }));
+            }
+
             return new PagedResponse<GetAllTimeEntriesViewModel>(vm, request.PageNumber, request.PageSize, totalCount);
         }
     }

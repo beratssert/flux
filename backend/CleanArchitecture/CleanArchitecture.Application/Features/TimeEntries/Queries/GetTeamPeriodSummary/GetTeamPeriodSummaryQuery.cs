@@ -5,6 +5,7 @@ using CleanArchitecture.Core.Interfaces;
 using CleanArchitecture.Core.Interfaces.Repositories;
 using MediatR;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,15 +24,18 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamPeriodSumma
         private readonly ITimeEntryRepositoryAsync _timeEntryRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
         private readonly IMapper _mapper;
+        private readonly IAuditService _auditService;
 
         public GetTeamPeriodSummaryQueryHandler(
             ITimeEntryRepositoryAsync timeEntryRepository,
             IAuthenticatedUserService authenticatedUserService,
-            IMapper mapper)
+            IMapper mapper,
+            IAuditService auditService = null)
         {
             _timeEntryRepository = timeEntryRepository;
             _authenticatedUserService = authenticatedUserService;
             _mapper = mapper;
+            _auditService = auditService;
         }
 
         public async Task<List<GetTeamPeriodSummaryViewModel>> Handle(GetTeamPeriodSummaryQuery request, CancellationToken cancellationToken)
@@ -50,6 +54,24 @@ namespace CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamPeriodSumma
                 request.To,
                 request.ProjectId,
                 request.EmployeeUserId);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "TeamPeriodSummary",
+                    _authenticatedUserService.UserId,
+                    "Read",
+                    "Manager/admin accessed team period summary.",
+                    null,
+                    JsonSerializer.Serialize(new
+                    {
+                        request.From,
+                        request.To,
+                        request.ProjectId,
+                        request.EmployeeUserId,
+                        ResultCount = summary.Count
+                    }));
+            }
 
             return _mapper.Map<List<GetTeamPeriodSummaryViewModel>>(summary);
         }
