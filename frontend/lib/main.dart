@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'features/auth/presentation/login_page.dart';
 
+import 'features/calendar/presentation/pages/calendar_page.dart';
+
 void main() {
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -22,7 +24,7 @@ class MyApp extends StatelessWidget {
           border: OutlineInputBorder(),
         ),
       ),
-      home: const LoginPage(),
+      home: CalendarPage(),
     );
   }
 }
