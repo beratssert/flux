@@ -1,5 +1,7 @@
 class TimeEntry {
   final int id;
+  final String userId;
+  final int projectId;
   final String description;
   final DateTime startTime;
   final DateTime? endTime;
@@ -7,6 +9,8 @@ class TimeEntry {
 
   TimeEntry({
     required this.id,
+    required this.userId,
+    required this.projectId,
     required this.description,
     required this.startTime,
     this.endTime,
@@ -36,6 +40,8 @@ class TimeEntry {
 
     return TimeEntry(
       id: json['id'] as int,
+      userId: json['userId'] as String? ?? '',
+      projectId: json['projectId'] as int? ?? 1,
       description: json['description'] as String? ?? '',
       startTime: DateTime.parse(startTimeStr).toLocal(),
       endTime: endTimeStr != null ? DateTime.parse(endTimeStr).toLocal() : null,
