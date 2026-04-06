@@ -1,10 +1,13 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/app_config.dart';
 
-class AuthApiClient {
-  final Dio _dio;
+final authApiClientProvider = Provider<AuthApiClient>(
+  (ref) => AuthApiClient(),
+);
 
+class AuthApiClient {
   AuthApiClient({Dio? dio})
       : _dio = dio ??
             Dio(
@@ -15,12 +18,14 @@ class AuthApiClient {
               ),
             );
 
+  final Dio _dio;
+
   Future<Response<dynamic>> login({
     required String email,
     required String password,
   }) {
     return _dio.post(
-      '/api/Account/authenticate',
+      '/api/v1/auth/login',
       data: <String, dynamic>{
         'email': email,
         'password': password,
@@ -36,7 +41,7 @@ class AuthApiClient {
     required String password,
   }) {
     return _dio.post(
-      '/api/Account/register',
+      '/api/v1/auth/register',
       data: <String, dynamic>{
         'firstName': firstName,
         'lastName': lastName,
@@ -48,20 +53,24 @@ class AuthApiClient {
     );
   }
 
-  Future<Response<dynamic>> forgotPassword({
-    required String email,
+  Future<Response<dynamic>> getMyProfile({
+    required String accessToken,
   }) {
-    return _dio.post(
-      '/api/Account/forgot-password',
-      data: <String, dynamic>{
-        'email': email,
-      },
+    return _dio.get(
+      '/api/v1/users/me',
       options: Options(
         headers: <String, dynamic>{
-          // Backend, origin header'ını reset linki için kullanıyor.
-          'origin': AppConfig.apiBaseUrl,
+          'Authorization': 'Bearer $accessToken',
         },
       ),
+    );
+  }
+
+  Future<Response<dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    throw UnsupportedError(
+      'Password reset is not supported by the current backend.',
     );
   }
 
@@ -70,29 +79,18 @@ class AuthApiClient {
     required String token,
     required String password,
     required String confirmPassword,
-  }) {
-    return _dio.post(
-      '/api/Account/reset-password',
-      data: <String, dynamic>{
-        'email': email,
-        'token': token,
-        'password': password,
-        'confirmPassword': confirmPassword,
-      },
+  }) async {
+    throw UnsupportedError(
+      'Password reset is not supported by the current backend.',
     );
   }
 
   Future<Response<dynamic>> confirmEmail({
     required String userId,
     required String code,
-  }) {
-    return _dio.get(
-      '/api/Account/confirm-email',
-      queryParameters: <String, dynamic>{
-        'userId': userId,
-        'code': code,
-      },
+  }) async {
+    throw UnsupportedError(
+      'Email confirmation is not exposed by the current backend.',
     );
   }
 }
-
