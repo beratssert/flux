@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/auth_api_client.dart';
+import '../data/auth_session_controller.dart';
 import 'forgot_password_page.dart';
 import 'register_page.dart';
 
@@ -29,23 +29,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     });
 
     try {
-      final api = ref.read(authApiClientProvider);
-      final response = await api.login(
-        email: _email,
-        password: _password,
-      );
-
-      // TODO: Token'ı secure storage'a alıp ana ekrana yönlendir.
-      debugPrint('Login response: ${response.data}');
+      await ref.read(authSessionControllerProvider.notifier).signIn(
+            email: _email,
+            password: _password,
+          );
     } catch (e) {
       setState(() {
         _error = 'Giriş başarısız: $e';
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
     }
   }
 
