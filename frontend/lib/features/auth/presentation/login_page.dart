@@ -5,10 +5,6 @@ import '../data/auth_api_client.dart';
 import 'forgot_password_page.dart';
 import 'register_page.dart';
 
-final authApiClientProvider = Provider<AuthApiClient>(
-  (ref) => AuthApiClient(),
-);
-
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
