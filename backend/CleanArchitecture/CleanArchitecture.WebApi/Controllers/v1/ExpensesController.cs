@@ -17,6 +17,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
     [Authorize]
     public class ExpensesController : BaseApiController
     {
+        /// <summary>
+        /// Lists expenses with role-based visibility and filtering.
+        /// </summary>
+        /// <remarks>
+        /// Employee sees own expenses, manager sees own plus managed-project team expenses, and admin sees all expenses.
+        /// </remarks>
         [HttpGet]
         [Authorize(Roles = "Employee,Manager,Admin")]
         [ProducesResponseType(typeof(PagedResponse<GetAllExpensesViewModel>), StatusCodes.Status200OK)]
@@ -39,6 +45,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             });
         }
 
+        /// <summary>
+        /// Gets a single expense by id.
+        /// </summary>
         [HttpGet("{id:int}")]
         [Authorize(Roles = "Employee,Manager,Admin")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -50,6 +59,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(await Mediator.Send(new GetExpenseByIdQuery { Id = id }));
         }
 
+        /// <summary>
+        /// Creates a new expense in Draft status.
+        /// </summary>
         [HttpPost]
         [Authorize(Policy = "Expenses.Manage.Self")]
         [ProducesResponseType(typeof(int), StatusCodes.Status201Created)]
@@ -62,6 +74,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return CreatedAtAction(nameof(Get), new { id }, id);
         }
 
+        /// <summary>
+        /// Updates an expense owned by the authenticated user.
+        /// </summary>
+        /// <remarks>
+        /// Only Draft or Rejected expenses can be updated.
+        /// </remarks>
         [HttpPatch("{id:int}")]
         [Authorize(Policy = "Expenses.Manage.Self")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
@@ -79,6 +97,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(await Mediator.Send(command));
         }
 
+        /// <summary>
+        /// Soft-deletes an expense owned by the authenticated user.
+        /// </summary>
+        /// <remarks>
+        /// Only Draft expenses can be deleted.
+        /// </remarks>
         [HttpDelete("{id:int}")]
         [Authorize(Policy = "Expenses.Manage.Self")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -92,6 +116,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return NoContent();
         }
 
+        /// <summary>
+        /// Submits a Draft or Rejected expense for review.
+        /// </summary>
         [HttpPost("{id:int}/submit")]
         [Authorize(Policy = "Expenses.Manage.Self")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
@@ -104,6 +131,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(await Mediator.Send(new SubmitExpenseCommand { Id = id }));
         }
 
+        /// <summary>
+        /// Rejects a Submitted expense in manager scope.
+        /// </summary>
         [HttpPost("{id:int}/reject")]
         [Authorize(Policy = "Expenses.Reject.Team")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]

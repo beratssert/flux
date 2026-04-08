@@ -4,5 +4,118 @@
         <name>CleanArchitecture.WebApi</name>
     </assembly>
     <members>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpenseCategoriesController.Get">
+            <summary>
+            Lists active expense categories.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpenseCategoriesController.Post(CleanArchitecture.Core.Features.ExpenseCategories.Commands.CreateExpenseCategory.CreateExpenseCategoryCommand)">
+            <summary>
+            Creates a new expense category.
+            </summary>
+            <remarks>
+            Admin only.
+            </remarks>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpenseCategoriesController.Patch(System.Int32,CleanArchitecture.Core.Features.ExpenseCategories.Commands.UpdateExpenseCategory.UpdateExpenseCategoryCommand)">
+            <summary>
+            Updates name and active flag of an expense category.
+            </summary>
+            <remarks>
+            Admin only.
+            </remarks>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpensesController.Get(CleanArchitecture.Core.Features.Expenses.Queries.GetAllExpenses.GetAllExpensesParameter)">
+            <summary>
+            Lists expenses with role-based visibility and filtering.
+            </summary>
+            <remarks>
+            Employee sees own expenses, manager sees own plus managed-project team expenses, and admin sees all expenses.
+            </remarks>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpensesController.Get(System.Int32)">
+            <summary>
+            Gets a single expense by id.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpensesController.Post(CleanArchitecture.Core.Features.Expenses.Commands.CreateExpense.CreateExpenseCommand)">
+            <summary>
+            Creates a new expense in Draft status.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpensesController.Patch(System.Int32,CleanArchitecture.Core.Features.Expenses.Commands.UpdateExpense.UpdateExpenseCommand)">
+            <summary>
+            Updates an expense owned by the authenticated user.
+            </summary>
+            <remarks>
+            Only Draft or Rejected expenses can be updated.
+            </remarks>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpensesController.Delete(System.Int32)">
+            <summary>
+            Soft-deletes an expense owned by the authenticated user.
+            </summary>
+            <remarks>
+            Only Draft expenses can be deleted.
+            </remarks>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpensesController.Submit(System.Int32)">
+            <summary>
+            Submits a Draft or Rejected expense for review.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ExpensesController.Reject(System.Int32,CleanArchitecture.Core.Features.Expenses.Commands.RejectExpense.RejectExpenseCommand)">
+            <summary>
+            Rejects a Submitted expense in manager scope.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.GetMyTimeSummary(System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String)">
+            <summary>
+            Returns time summary for the authenticated user.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.GetManagerTeamTimeSummary(System.Nullable{System.Int32},System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String)">
+            <summary>
+            Returns team time summary for manager/admin scope.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.GetMyExpenseSummary(System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,System.String)">
+            <summary>
+            Returns expense summary for the authenticated user.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.GetManagerTeamExpenseSummary(System.Nullable{System.Int32},System.String,System.Nullable{System.Int32},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,System.String)">
+            <summary>
+            Returns team expense summary for manager/admin scope.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.GetProjectSummary(System.Int32)">
+            <summary>
+            Returns project-level aggregate summary.
+            </summary>
+            <remarks>
+            Includes total time, total expenses, and billable entry rate for the given project.
+            </remarks>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.ExportMyTimeSummary(System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String)">
+            <summary>
+            Exports authenticated user's time summary as CSV.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.ExportManagerTeamTimeSummary(System.String,System.Nullable{System.Int32},System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String)">
+            <summary>
+            Exports manager/admin team time summary as CSV.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.ExportMyExpenseSummary(System.String,System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,System.String)">
+            <summary>
+            Exports authenticated user's expense summary as CSV.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.ReportsController.ExportManagerTeamExpenseSummary(System.String,System.Nullable{System.Int32},System.String,System.Nullable{System.Int32},System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String,System.String)">
+            <summary>
+            Exports manager/admin team expense summary as CSV.
+            </summary>
+        </member>
     </members>
 </doc>

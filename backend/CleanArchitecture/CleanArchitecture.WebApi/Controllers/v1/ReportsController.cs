@@ -19,6 +19,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
     [Route("api/v{version:apiVersion}/reports")]
     public class ReportsController : BaseApiController
     {
+        /// <summary>
+        /// Returns time summary for the authenticated user.
+        /// </summary>
         [HttpGet("me/time-summary")]
         [Authorize(Policy = "Reports.Read.Self")]
         [ProducesResponseType(typeof(TimeSummaryResponse), StatusCodes.Status200OK)]
@@ -36,6 +39,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
+        /// <summary>
+        /// Returns team time summary for manager/admin scope.
+        /// </summary>
         [HttpGet("manager/team-time-summary")]
         [Authorize(Policy = "Reports.Read.Team")]
         [ProducesResponseType(typeof(TimeSummaryResponse), StatusCodes.Status200OK)]
@@ -60,6 +66,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
+        /// <summary>
+        /// Returns expense summary for the authenticated user.
+        /// </summary>
         [HttpGet("me/expense-summary")]
         [Authorize(Policy = "Reports.Read.Self")]
         [ProducesResponseType(typeof(ExpenseSummaryResponse), StatusCodes.Status200OK)]
@@ -82,6 +91,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
+        /// <summary>
+        /// Returns team expense summary for manager/admin scope.
+        /// </summary>
         [HttpGet("manager/team-expense-summary")]
         [Authorize(Policy = "Reports.Read.Team")]
         [ProducesResponseType(typeof(ExpenseSummaryResponse), StatusCodes.Status200OK)]
@@ -110,6 +122,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
+        /// <summary>
+        /// Returns project-level aggregate summary.
+        /// </summary>
+        /// <remarks>
+        /// Includes total time, total expenses, and billable entry rate for the given project.
+        /// </remarks>
         [HttpGet("projects/{projectId:int}/summary")]
         [Authorize(Policy = "Reports.Read.Team")]
         [ProducesResponseType(typeof(ProjectSummaryResponse), StatusCodes.Status200OK)]
@@ -126,6 +144,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
+        /// <summary>
+        /// Exports authenticated user's time summary as CSV.
+        /// </summary>
         [HttpGet("me/time-summary/export")]
         [Authorize(Policy = "Reports.Export.Self")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -153,6 +174,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return BuildCsvFile(summary, "my-time-summary");
         }
 
+        /// <summary>
+        /// Exports manager/admin team time summary as CSV.
+        /// </summary>
         [HttpGet("manager/team-time-summary/export")]
         [Authorize(Policy = "Reports.Export.Team")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -184,6 +208,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return BuildCsvFile(summary, "team-time-summary");
         }
 
+        /// <summary>
+        /// Exports authenticated user's expense summary as CSV.
+        /// </summary>
         [HttpGet("me/expense-summary/export")]
         [Authorize(Policy = "Reports.Export.Self")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -213,6 +240,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return BuildExpenseCsvFile(summary, "my-expense-summary");
         }
 
+        /// <summary>
+        /// Exports manager/admin team expense summary as CSV.
+        /// </summary>
         [HttpGet("manager/team-expense-summary/export")]
         [Authorize(Policy = "Reports.Export.Team")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]

@@ -14,6 +14,9 @@ namespace CleanArchitecture.WebApi.Controllers.v1
     [Route("api/v{version:apiVersion}/expense-categories")]
     public class ExpenseCategoriesController : BaseApiController
     {
+        /// <summary>
+        /// Lists active expense categories.
+        /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(List<GetAllExpenseCategoriesViewModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -22,6 +25,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return await Mediator.Send(new GetAllExpenseCategoriesQuery());
         }
 
+        /// <summary>
+        /// Creates a new expense category.
+        /// </summary>
+        /// <remarks>
+        /// Admin only.
+        /// </remarks>
         [HttpPost]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(int), StatusCodes.Status201Created)]
@@ -34,6 +43,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return StatusCode(StatusCodes.Status201Created, id);
         }
 
+        /// <summary>
+        /// Updates name and active flag of an expense category.
+        /// </summary>
+        /// <remarks>
+        /// Admin only.
+        /// </remarks>
         [HttpPatch("{id:int}")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
