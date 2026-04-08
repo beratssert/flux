@@ -1,5 +1,6 @@
 using CleanArchitecture.Core.Entities;
 using CleanArchitecture.Core.Interfaces.Repositories;
+using CleanArchitecture.Core.DTOs.Expenses;
 using CleanArchitecture.Infrastructure.Contexts;
 using CleanArchitecture.Infrastructure.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -184,6 +185,82 @@ namespace CleanArchitecture.Infrastructure.Repositories
             return ApplyFilters(query, projectId, categoryId, status, from, to).CountAsync();
         }
 
+        public async Task<IReadOnlyList<ExpenseSummaryRowDto>> GetSummaryRowsByUserAsync(
+            string userId,
+            DateTime? from = null,
+            DateTime? to = null,
+            string currencyCode = null)
+        {
+            var query = _expenses.Where(e => e.UserId == userId && e.DeletedAtUtc == null);
+            query = ApplyDateAndCurrencyFilters(query, from, to, currencyCode);
+
+            return await query
+                .Select(e => new ExpenseSummaryRowDto
+                {
+                    UserId = e.UserId,
+                    ProjectId = e.ProjectId,
+                    CategoryId = e.CategoryId,
+                    ExpenseDate = e.ExpenseDate,
+                    Amount = e.Amount,
+                    CurrencyCode = e.CurrencyCode
+                })
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<ExpenseSummaryRowDto>> GetSummaryRowsByManagedProjectsAsync(
+            string managerUserId,
+            int? projectId = null,
+            string employeeUserId = null,
+            int? categoryId = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            string currencyCode = null)
+        {
+            var query = BuildManagedProjectsQuery(managerUserId, employeeUserId, projectId, categoryId, null, from, to);
+            query = ApplyCurrencyFilter(query, currencyCode);
+            return await query
+                .Select(e => new ExpenseSummaryRowDto
+                {
+                    UserId = e.UserId,
+                    ProjectId = e.ProjectId,
+                    CategoryId = e.CategoryId,
+                    ExpenseDate = e.ExpenseDate,
+                    Amount = e.Amount,
+                    CurrencyCode = e.CurrencyCode
+                })
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IReadOnlyList<ExpenseSummaryRowDto>> GetSummaryRowsAllAsync(
+            int? projectId = null,
+            string employeeUserId = null,
+            int? categoryId = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            string currencyCode = null)
+        {
+            var query = _expenses.Where(e => e.DeletedAtUtc == null);
+            if (projectId.HasValue) query = query.Where(e => e.ProjectId == projectId.Value);
+            if (!string.IsNullOrWhiteSpace(employeeUserId)) query = query.Where(e => e.UserId == employeeUserId);
+            if (categoryId.HasValue) query = query.Where(e => e.CategoryId == categoryId.Value);
+            query = ApplyDateAndCurrencyFilters(query, from, to, currencyCode);
+
+            return await query
+                .Select(e => new ExpenseSummaryRowDto
+                {
+                    UserId = e.UserId,
+                    ProjectId = e.ProjectId,
+                    CategoryId = e.CategoryId,
+                    ExpenseDate = e.ExpenseDate,
+                    Amount = e.Amount,
+                    CurrencyCode = e.CurrencyCode
+                })
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         private IQueryable<Expense> BuildUserQuery(
             string userId,
             int? projectId,
@@ -278,6 +355,36 @@ namespace CleanArchitecture.Infrastructure.Repositories
             if (to.HasValue)
             {
                 query = query.Where(e => e.ExpenseDate <= to.Value.Date);
+            }
+
+            return query;
+        }
+
+        private static IQueryable<Expense> ApplyDateAndCurrencyFilters(
+            IQueryable<Expense> query,
+            DateTime? from,
+            DateTime? to,
+            string currencyCode)
+        {
+            if (from.HasValue)
+            {
+                query = query.Where(e => e.ExpenseDate >= from.Value.Date);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(e => e.ExpenseDate <= to.Value.Date);
+            }
+
+            return ApplyCurrencyFilter(query, currencyCode);
+        }
+
+        private static IQueryable<Expense> ApplyCurrencyFilter(IQueryable<Expense> query, string currencyCode)
+        {
+            if (!string.IsNullOrWhiteSpace(currencyCode))
+            {
+                var normalized = currencyCode.Trim().ToUpperInvariant();
+                query = query.Where(e => e.CurrencyCode == normalized);
             }
 
             return query;

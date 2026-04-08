@@ -1,4 +1,5 @@
 using CleanArchitecture.Core.Entities;
+using CleanArchitecture.Core.DTOs.Expenses;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -86,5 +87,25 @@ namespace CleanArchitecture.Core.Interfaces.Repositories
             string status = null,
             DateTime? from = null,
             DateTime? to = null);
+        Task<IReadOnlyList<ExpenseSummaryRowDto>> GetSummaryRowsByUserAsync(
+            string userId,
+            DateTime? from = null,
+            DateTime? to = null,
+            string currencyCode = null);
+        Task<IReadOnlyList<ExpenseSummaryRowDto>> GetSummaryRowsByManagedProjectsAsync(
+            string managerUserId,
+            int? projectId = null,
+            string employeeUserId = null,
+            int? categoryId = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            string currencyCode = null);
+        Task<IReadOnlyList<ExpenseSummaryRowDto>> GetSummaryRowsAllAsync(
+            int? projectId = null,
+            string employeeUserId = null,
+            int? categoryId = null,
+            DateTime? from = null,
+            DateTime? to = null,
+            string currencyCode = null);
     }
 }
