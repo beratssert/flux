@@ -69,6 +69,13 @@ namespace CleanArchitecture.Core.Interfaces.Repositories
             string employeeUserId = null,
             DateTime? from = null,
             DateTime? to = null);
+        Task<(int TotalMinutes, int TotalEntries, int BillableEntries)> GetProjectAggregateByManagedProjectsAsync(
+            string managerUserId,
+            int projectId);
+        Task<(int TotalMinutes, int TotalEntries, int BillableEntries)> GetProjectAggregateAllAsync(
+            int projectId);
+        Task<bool> IsProjectManagedByAsync(string managerUserId, int projectId);
+        Task<bool> ProjectExistsAsync(int projectId);
         Task<bool> HasOverlappingEntryAsync(string userId, DateTime startUtc, DateTime endUtc, int? excludeId = null);
     }
 }

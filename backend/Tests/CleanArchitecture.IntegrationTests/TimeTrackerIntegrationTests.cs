@@ -163,6 +163,26 @@ public class TimeTrackerIntegrationTests
         Assert.Equal(HttpStatusCode.Forbidden, employeeTeamResp.StatusCode);
     }
 
+    [Fact]
+    public async Task ProjectSummary_ManagerAllowed_EmployeeForbidden()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var managerToken = await LoginAndGetTokenAsync(client, "manager@flux.local", "123Pa$$word!");
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+        var employeeId = await GetCurrentUserIdAsync(client, employeeToken);
+        var projectId = await GetAssignedProjectIdAsync(employeeId);
+
+        using var managerReq = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/reports/projects/{projectId}/summary");
+        managerReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", managerToken);
+        var managerResp = await client.SendAsync(managerReq);
+        Assert.Equal(HttpStatusCode.OK, managerResp.StatusCode);
+
+        using var employeeReq = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/reports/projects/{projectId}/summary");
+        employeeReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var employeeResp = await client.SendAsync(employeeReq);
+        Assert.Equal(HttpStatusCode.Forbidden, employeeResp.StatusCode);
+    }
+
     private static async Task<string> LoginAndGetTokenAsync(HttpClient client, string email, string password)
     {
         var response = await client.PostAsJsonAsync("/api/v1/auth/login", new

@@ -3,6 +3,7 @@ using CleanArchitecture.Core.Features.Reports.Queries.GetManagerTeamExpenseSumma
 using CleanArchitecture.Core.Features.Reports.Queries.GetManagerTeamTimeSummary;
 using CleanArchitecture.Core.Features.Reports.Queries.GetMyExpenseSummary;
 using CleanArchitecture.Core.Features.Reports.Queries.GetMyTimeSummary;
+using CleanArchitecture.Core.Features.Reports.Queries.GetProjectSummary;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -104,6 +105,22 @@ namespace CleanArchitecture.WebApi.Controllers.v1
                 To = to,
                 GroupBy = groupBy,
                 CurrencyCode = currencyCode
+            });
+
+            return Ok(result);
+        }
+
+        [HttpGet("projects/{projectId:int}/summary")]
+        [Authorize(Policy = "Reports.Read.Team")]
+        [ProducesResponseType(typeof(ProjectSummaryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ProjectSummaryResponse>> GetProjectSummary(int projectId)
+        {
+            var result = await Mediator.Send(new GetProjectSummaryQuery
+            {
+                ProjectId = projectId
             });
 
             return Ok(result);

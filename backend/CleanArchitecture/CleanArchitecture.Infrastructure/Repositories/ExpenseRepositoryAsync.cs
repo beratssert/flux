@@ -261,6 +261,30 @@ namespace CleanArchitecture.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<decimal> GetProjectTotalAmountByManagedProjectsAsync(string managerUserId, int projectId)
+        {
+            var managedProjectIds = _projects
+                .Where(p => p.ManagerUserId == managerUserId)
+                .Select(p => p.Id);
+
+            var total = await _expenses
+                .Where(e => e.DeletedAtUtc == null && e.ProjectId == projectId && managedProjectIds.Contains(e.ProjectId))
+                .Select(e => (decimal?)e.Amount)
+                .SumAsync();
+
+            return total ?? 0m;
+        }
+
+        public async Task<decimal> GetProjectTotalAmountAllAsync(int projectId)
+        {
+            var total = await _expenses
+                .Where(e => e.DeletedAtUtc == null && e.ProjectId == projectId)
+                .Select(e => (decimal?)e.Amount)
+                .SumAsync();
+
+            return total ?? 0m;
+        }
+
         private IQueryable<Expense> BuildUserQuery(
             string userId,
             int? projectId,
