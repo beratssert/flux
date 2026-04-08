@@ -146,6 +146,7 @@ namespace CleanArchitecture.Infrastructure
             services.AddTransient<IProductRepositoryAsync, ProductRepositoryAsync>();
             services.AddTransient<ICategoryRepositoryAsync, CategoryRepositoryAsync>();
             services.AddTransient<ITimeEntryRepositoryAsync, TimeEntryRepositoryAsync>();
+            services.AddTransient<IExpenseRepositoryAsync, ExpenseRepositoryAsync>();
             services.AddTransient<IRunningTimerRepositoryAsync, RunningTimerRepositoryAsync>();
             services.AddTransient<IProjectAssignmentRepositoryAsync, ProjectAssignmentRepositoryAsync>();
             #endregion

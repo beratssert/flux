@@ -28,6 +28,8 @@ namespace CleanArchitecture.Infrastructure.Contexts
         public DbSet<ProjectAssignment> ProjectAssignments { get; set; }
         public DbSet<RunningTimer> RunningTimers { get; set; }
         public DbSet<TimeEntry> TimeEntries { get; set; }
+        public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
+        public DbSet<Expense> Expenses { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
@@ -154,6 +156,42 @@ namespace CleanArchitecture.Infrastructure.Contexts
                 entity.Property(a => a.NewValuesJson).HasMaxLength(4000);
                 entity.Property(a => a.Note).HasMaxLength(1000);
                 entity.HasIndex(a => a.OccurredAtUtc);
+            });
+
+            builder.Entity<ExpenseCategory>(entity =>
+            {
+                entity.Property(ec => ec.Name).IsRequired().HasMaxLength(150);
+                entity.HasIndex(ec => ec.Name).IsUnique();
+            });
+
+            builder.Entity<Expense>(entity =>
+            {
+                entity.Property(e => e.UserId).IsRequired();
+                entity.Property(e => e.CurrencyCode).IsRequired().HasMaxLength(3);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Notes).HasMaxLength(1000);
+                entity.Property(e => e.ReceiptUrl).HasMaxLength(1000);
+                entity.Property(e => e.RejectionReason).HasMaxLength(1000);
+                entity.Property(e => e.ReviewedByUserId).HasMaxLength(450);
+
+                entity.HasOne<ApplicationUser>()
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne<Project>()
+                    .WithMany()
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne<ExpenseCategory>()
+                    .WithMany()
+                    .HasForeignKey(e => e.CategoryId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.UserId, e.ExpenseDate });
+                entity.HasIndex(e => new { e.ProjectId, e.ExpenseDate });
+                entity.HasIndex(e => new { e.CategoryId, e.ExpenseDate });
+                entity.HasIndex(e => new { e.Status, e.ExpenseDate });
+                entity.HasIndex(e => new { e.UserId, e.ProjectId, e.ExpenseDate });
             });
 
             base.OnModelCreating(builder);

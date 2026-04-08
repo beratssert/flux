@@ -86,6 +86,7 @@ using (var scope = app.Services.CreateScope())
         await CleanArchitecture.Infrastructure.Seeds.DefaultBasicUser.SeedAsync(userManager, roleManager);
             await CleanArchitecture.Infrastructure.Seeds.DefaultManagerUser.SeedAsync(userManager);
         await CleanArchitecture.Infrastructure.Seeds.DefaultTimeTrackerData.SeedAsync(dbContext, userManager);
+        await CleanArchitecture.Infrastructure.Seeds.DefaultExpenseData.SeedAsync(dbContext, userManager);
         Log.Information("Finished Seeding Default Data");
         Log.Information("Application Starting");
     }
