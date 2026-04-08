@@ -5,6 +5,7 @@ using CleanArchitecture.Core.Features.TimeEntries.Queries.GetAllTimeEntries;
 using CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamPeriodSummary;
 using CleanArchitecture.Core.Features.TimeEntries.Queries.GetTeamProjectSummary;
 using CleanArchitecture.Core.Features.Expenses.Queries.GetAllExpenses;
+using CleanArchitecture.Core.Features.ExpenseCategories.Queries.GetAllExpenseCategories;
 using CleanArchitecture.Core.Features.Categories.Queries.GetAllCategories;
 using CleanArchitecture.Core.Features.Products.Commands.CreateProduct;
 using CleanArchitecture.Core.Features.Products.Queries.GetAllProducts;
@@ -24,6 +25,7 @@ namespace CleanArchitecture.Core.Mappings
             CreateMap<TimeEntry, GetAllTimeEntriesViewModel>();
             CreateMap<GetAllExpensesQuery, GetAllExpensesParameter>();
             CreateMap<Expense, GetAllExpensesViewModel>();
+            CreateMap<ExpenseCategory, GetAllExpenseCategoriesViewModel>();
             CreateMap<TeamProjectSummaryDto, GetTeamProjectSummaryViewModel>();
             CreateMap<TeamPeriodSummaryDto, GetTeamPeriodSummaryViewModel>();
         }

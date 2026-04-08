@@ -111,6 +111,35 @@ public class TimeTrackerIntegrationTests
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ExpenseCategories_Get_EmployeeAllowed_AdminWriteOnly()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+        var adminToken = await LoginAndGetTokenAsync(client, "admin@flux.local", "123Pa$$word!");
+
+        using var getReq = new HttpRequestMessage(HttpMethod.Get, "/api/v1/expense-categories");
+        getReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var getResp = await client.SendAsync(getReq);
+        Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
+
+        using var employeePostReq = new HttpRequestMessage(HttpMethod.Post, "/api/v1/expense-categories")
+        {
+            Content = JsonContent.Create(new { name = "EmployeeShouldNotCreate" })
+        };
+        employeePostReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var employeePostResp = await client.SendAsync(employeePostReq);
+        Assert.Equal(HttpStatusCode.Forbidden, employeePostResp.StatusCode);
+
+        using var adminPostReq = new HttpRequestMessage(HttpMethod.Post, "/api/v1/expense-categories")
+        {
+            Content = JsonContent.Create(new { name = "AdminCanCreateCategory" })
+        };
+        adminPostReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var adminPostResp = await client.SendAsync(adminPostReq);
+        Assert.Equal(HttpStatusCode.Created, adminPostResp.StatusCode);
+    }
+
     private static async Task<string> LoginAndGetTokenAsync(HttpClient client, string email, string password)
     {
         var response = await client.PostAsJsonAsync("/api/v1/auth/login", new
