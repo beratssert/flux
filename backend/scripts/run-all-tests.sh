@@ -60,16 +60,24 @@ else
 fi
 
 if [[ "$skip_e2e" == "true" ]]; then
-  echo "[5/6] Skipping E2E tests (SKIP_E2E=true)"
-  echo "[6/6] Skipping E2E tests (SKIP_E2E=true)"
+  echo "[5/8] Skipping E2E tests (SKIP_E2E=true)"
+  echo "[6/8] Skipping E2E tests (SKIP_E2E=true)"
+  echo "[7/8] Skipping E2E tests (SKIP_E2E=true)"
+  echo "[8/8] Skipping E2E tests (SKIP_E2E=true)"
   echo "All selected tests passed."
   exit 0
 fi
 
-echo "[5/6] Running auth E2E tests..."
+echo "[5/8] Running auth E2E tests..."
 RESET_STACK=false BUILD_STACK=false bash scripts/test-auth-e2e.sh
 
-echo "[6/6] Running time entries E2E tests..."
+echo "[6/8] Running time entries E2E tests..."
 RESET_STACK=false BUILD_STACK=false bash scripts/test-timeentries-e2e.sh
+
+echo "[7/8] Running reports E2E tests..."
+RESET_STACK=false BUILD_STACK=false bash scripts/test-reports-e2e.sh
+
+echo "[8/8] Running expenses E2E tests..."
+RESET_STACK=false BUILD_STACK=false bash scripts/test-expenses-e2e.sh
 
 echo "All tests passed."
