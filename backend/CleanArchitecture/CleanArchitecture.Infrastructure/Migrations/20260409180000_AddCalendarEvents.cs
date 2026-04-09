@@ -35,7 +35,7 @@ namespace CleanArchitecture.Infrastructure.Migrations
                     table.ForeignKey(
                         name: "FK_CalendarEvents_AspNetUsers_CreatedByUserId",
                         column: x => x.CreatedByUserId,
-                        principalTable: "User",
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
