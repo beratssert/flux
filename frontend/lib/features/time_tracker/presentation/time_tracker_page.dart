@@ -1319,7 +1319,7 @@ class _Sidebar extends StatelessWidget {
                 const SizedBox(height: 8),
                 _NavItem(
                   icon: Icons.bar_chart_rounded,
-                  label: 'Report',
+                  label: 'Reports',
                   selected: activeSection == _AppSection.report,
                   onTap: () => onSectionChanged(_AppSection.report),
                 ),
