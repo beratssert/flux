@@ -17,9 +17,9 @@ class TimeEntry {
     required this.durationMinutes,
   });
 
-  // JSON'dan Dart nesnesine çevrim (Factory pattern)
+  // Convert from JSON to Dart object (Factory pattern)
   factory TimeEntry.fromJson(Map<String, dynamic> json) {
-    // startTimeUtc varsa kullan, yoksa entryDate'i kullanıp saat olarak 09:00 ata
+    // Use startTimeUtc if available, otherwise use entryDate and set time to 09:00
     DateTime parsedStartTime;
     String? startTimeUtc = json['startTimeUtc'] as String?;
 
@@ -31,12 +31,12 @@ class TimeEntry {
     } else {
       String? entryDate = json['entryDate'] as String?;
       if (entryDate == null) {
-        throw Exception('startTimeUtc veya entryDate gerekli');
+        throw Exception('startTimeUtc or entryDate is required');
       }
-      // entryDate genelde "yyyy-MM-dd" veya "yyyy-MM-ddT00:00:00Z" şeklindedir
+      // entryDate is usually in format "yyyy-MM-dd" or "yyyy-MM-ddT00:00:00Z"
       DateTime date = DateTime.parse(entryDate).toLocal();
       parsedStartTime =
-          DateTime(date.year, date.month, date.day, 9, 0); // Varsayılan 09:00
+          DateTime(date.year, date.month, date.day, 9, 0); // Default 09:00
     }
 
     String? endTimeUtc = json['endTimeUtc'] as String?;
@@ -49,7 +49,7 @@ class TimeEntry {
     }
 
     int duration = json['durationMinutes'] as int? ?? 0;
-    // Eğer saatsiz (duration yok ve endTime yok) kaydedilmişse takvimde gözükmesi için 60 dk verelim
+    // If recorded without time (no duration and no endTime), set 60 minutes for calendar display
     if (duration == 0 && parsedEndTime == null) {
       duration = 60;
     }

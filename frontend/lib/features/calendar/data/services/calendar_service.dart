@@ -28,7 +28,7 @@ class CalendarService {
 
   CalendarService(this._dio);
 
-  // Employee: kendi time entry'lerini getirir
+  // Employee: fetches their own time entries
   Future<List<TimeEntry>> getTimeEntries(DateTime from, DateTime to) async {
     try {
       final response = await _dio.get('/api/v1/TimeEntries', queryParameters: {
@@ -51,7 +51,7 @@ class CalendarService {
     }
   }
 
-  // Manager: yönettiği ekibin time entry'lerini getirir
+  // Manager: fetches time entries for the team they manage
   Future<List<TimeEntry>> getTeamTimeEntries(DateTime from, DateTime to) async {
     try {
       final response =

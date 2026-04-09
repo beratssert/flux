@@ -59,10 +59,10 @@ class CalendarNotifier extends StateNotifier<CalendarState> {
     try {
       List<TimeEntry> data;
       if (state.role == 'Manager') {
-        // Manager: ekibinin tüm time entry'lerini çeker
+        // Manager: fetches all time entries for their team
         data = await _service.getTeamTimeEntries(from, to);
       } else {
-        // Employee: sadece kendi time entry'lerini çeker
+        // Employee: fetches only their own time entries
         data = await _service.getTimeEntries(from, to);
       }
       state = state.copyWith(entries: data, isLoading: false);
