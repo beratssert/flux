@@ -8,6 +8,7 @@ import '../../../core/api_error_message.dart';
 import '../../auth/data/auth_api_client.dart';
 import '../../auth/data/auth_models.dart';
 import '../../auth/data/auth_session_controller.dart';
+import '../../calendar/presentation/pages/calendar_page.dart';
 import '../data/time_tracker_api_client.dart';
 import '../data/time_tracker_models.dart';
 
@@ -693,6 +694,14 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
     await ref.read(authSessionControllerProvider.notifier).signOut();
   }
 
+  Future<void> _openCalendar() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const CalendarPage(),
+      ),
+    );
+  }
+
   Future<void> _handleProtectedError(Object error) async {
     if (error is DioException && error.response?.statusCode == 401) {
       await ref.read(authSessionControllerProvider.notifier).signOut();
@@ -893,6 +902,7 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
               profile: profile,
               logoutBusy: _submitting,
               onSettings: _showSettingsMessage,
+              onCalendar: _openCalendar,
               onLogout: _logout,
             ),
           ),
@@ -912,6 +922,7 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
                 profile: profile,
                 logoutBusy: _submitting,
                 onSettings: _showSettingsMessage,
+                onCalendar: _openCalendar,
                 onLogout: _logout,
               ),
             ),
@@ -1087,12 +1098,14 @@ class _Sidebar extends StatelessWidget {
     required this.profile,
     required this.logoutBusy,
     required this.onSettings,
+    required this.onCalendar,
     required this.onLogout,
   });
 
   final AuthProfile profile;
   final bool logoutBusy;
   final VoidCallback onSettings;
+  final VoidCallback onCalendar;
   final VoidCallback onLogout;
 
   @override
@@ -1134,22 +1147,32 @@ class _Sidebar extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: const [
-                _NavItem(
+              children: [
+                const _NavItem(
                   icon: Icons.access_time_rounded,
                   label: 'Time Tracker',
                   selected: true,
                 ),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.bar_chart_rounded, label: 'Report'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.receipt_long_rounded, label: 'Expenses'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.calendar_month_rounded, label: 'Calendar'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.folder_copy_rounded, label: 'Projects'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.groups_rounded, label: 'Members'),
+                const SizedBox(height: 8),
+                const _NavItem(icon: Icons.bar_chart_rounded, label: 'Report'),
+                const SizedBox(height: 8),
+                const _NavItem(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Expenses',
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.calendar_month_rounded,
+                  label: 'Calendar',
+                  onTap: logoutBusy ? null : onCalendar,
+                ),
+                const SizedBox(height: 8),
+                const _NavItem(
+                  icon: Icons.folder_copy_rounded,
+                  label: 'Projects',
+                ),
+                const SizedBox(height: 8),
+                const _NavItem(icon: Icons.groups_rounded, label: 'Members'),
               ],
             ),
           ),
@@ -1250,37 +1273,45 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.label,
     this.selected = false,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      decoration: BoxDecoration(
-        color: selected ? const Color(0xFFDCEEFF) : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
-          ),
-          const SizedBox(width: 14),
-          Text(
-            label,
-            style: TextStyle(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFDCEEFF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
               color:
-                  selected ? const Color(0xFF1E7BF2) : const Color(0xFF53627C),
-              fontSize: 15,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected
+                    ? const Color(0xFF1E7BF2)
+                    : const Color(0xFF53627C),
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
