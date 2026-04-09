@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'features/auth/data/auth_session_controller.dart';
 import 'features/auth/presentation/login_page.dart';
+import 'features/calendar/presentation/calendar_page.dart';
 import 'features/time_tracker/presentation/time_tracker_page.dart';
 
 void main() {
@@ -71,10 +72,54 @@ class AppRoot extends ConsumerWidget {
       case AuthStatus.checking:
         return const _LaunchScreen();
       case AuthStatus.authenticated:
-        return const TimeTrackerPage();
+        return const _MainShell();
       case AuthStatus.unauthenticated:
         return const LoginPage();
     }
+  }
+}
+
+class _MainShell extends StatefulWidget {
+  const _MainShell();
+
+  @override
+  State<_MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<_MainShell> {
+  int _currentIndex = 0;
+
+  static const _pages = <Widget>[
+    TimeTrackerPage(),
+    CalendarPage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() => _currentIndex = index);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.timer_outlined),
+            selectedIcon: Icon(Icons.timer_rounded),
+            label: 'Tracker',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month_rounded),
+            label: 'Calendar',
+          ),
+        ],
+      ),
+    );
   }
 }
 

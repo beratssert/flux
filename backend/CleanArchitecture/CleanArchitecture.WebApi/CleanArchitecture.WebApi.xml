@@ -4,5 +4,20 @@
         <name>CleanArchitecture.WebApi</name>
     </assembly>
     <members>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.CalendarController.Get(System.DateTime,System.DateTime,System.Nullable{System.Int32},System.Boolean)">
+            <summary>
+            Returns calendar events and (optionally) time entries for the authenticated user
+            within the given date range.
+            </summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.CalendarController.Post(CleanArchitecture.Core.Features.Calendar.Commands.CreateCalendarEvent.CreateCalendarEventCommand)">
+            <summary>Creates a new calendar event. Only Managers and Admins can create events.</summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.CalendarController.Put(System.Int32,CleanArchitecture.Core.Features.Calendar.Commands.UpdateCalendarEvent.UpdateCalendarEventCommand)">
+            <summary>Updates an existing calendar event. Only the creator or project manager can update.</summary>
+        </member>
+        <member name="M:CleanArchitecture.WebApi.Controllers.v1.CalendarController.Delete(System.Int32)">
+            <summary>Soft-deletes a calendar event.</summary>
+        </member>
     </members>
 </doc>

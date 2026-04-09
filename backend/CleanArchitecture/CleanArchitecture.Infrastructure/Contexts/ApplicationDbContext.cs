@@ -31,6 +31,7 @@ namespace CleanArchitecture.Infrastructure.Contexts
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<CalendarEvent> CalendarEvents { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
         {
@@ -164,9 +165,24 @@ namespace CleanArchitecture.Infrastructure.Contexts
                 entity.HasIndex(ec => ec.Name).IsUnique();
             });
 
-            builder.Entity<Expense>(entity =>
+            builder.Entity<CalendarEvent>(entity =>
             {
-                entity.Property(e => e.UserId).IsRequired();
+                entity.Property(ce => ce.CreatedByUserId).IsRequired();
+                entity.Property(ce => ce.Title).IsRequired().HasMaxLength(300);
+                entity.Property(ce => ce.Description).HasMaxLength(2000);
+                entity.Property(ce => ce.Visibility).IsRequired().HasMaxLength(20);
+
+                entity.HasOne<ApplicationUser>()
+                    .WithMany()
+                    .HasForeignKey(ce => ce.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(ce => new { ce.CreatedByUserId, ce.StartUtc });
+                entity.HasIndex(ce => new { ce.ProjectId, ce.StartUtc });
+            });
+
+            builder.Entity<Expense>(entity =>
+            {entity.Property(e => e.UserId).IsRequired();
                 entity.Property(e => e.CurrencyCode).IsRequired().HasMaxLength(3);
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.Notes).HasMaxLength(1000);
