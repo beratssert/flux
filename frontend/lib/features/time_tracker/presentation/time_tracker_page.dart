@@ -27,6 +27,59 @@ enum _NavSection {
   members,
 }
 
+class _NavEntry {
+  const _NavEntry({
+    required this.section,
+    required this.icon,
+    required this.label,
+    this.description,
+  });
+
+  final _NavSection section;
+  final IconData icon;
+  final String label;
+  final String? description;
+}
+
+const _navEntries = <_NavEntry>[
+  _NavEntry(
+    section: _NavSection.timeTracker,
+    icon: Icons.access_time_rounded,
+    label: 'Time Tracker',
+  ),
+  _NavEntry(
+    section: _NavSection.report,
+    icon: Icons.bar_chart_rounded,
+    label: 'Report',
+    description: 'Detailed time reports and analytics will be available here.',
+  ),
+  _NavEntry(
+    section: _NavSection.expenses,
+    icon: Icons.receipt_long_rounded,
+    label: 'Expenses',
+    description: 'Track and manage your project expenses here.',
+  ),
+  _NavEntry(
+    section: _NavSection.calendar,
+    icon: Icons.calendar_month_rounded,
+    label: 'Calendar',
+    description:
+        'A calendar view of your time entries will be available here.',
+  ),
+  _NavEntry(
+    section: _NavSection.projects,
+    icon: Icons.folder_copy_rounded,
+    label: 'Projects',
+    description: 'Manage your projects and clients here.',
+  ),
+  _NavEntry(
+    section: _NavSection.members,
+    icon: Icons.groups_rounded,
+    label: 'Members',
+    description: 'Manage team members and their roles here.',
+  ),
+];
+
 class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -904,9 +957,11 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
               logoutBusy: _submitting,
               selectedSection: _selectedSection,
               onNavItemSelected: (section) {
-                setState(() {
-                  _selectedSection = section;
-                });
+                if (section != _selectedSection) {
+                  setState(() {
+                    _selectedSection = section;
+                  });
+                }
                 Navigator.of(context).pop();
               },
               onSettings: _showSettingsMessage,
@@ -930,9 +985,11 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
                 logoutBusy: _submitting,
                 selectedSection: _selectedSection,
                 onNavItemSelected: (section) {
-                  setState(() {
-                    _selectedSection = section;
-                  });
+                  if (section != _selectedSection) {
+                    setState(() {
+                      _selectedSection = section;
+                    });
+                  }
                 },
                 onSettings: _showSettingsMessage,
                 onLogout: _logout,
@@ -1166,47 +1223,15 @@ class _Sidebar extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
-                _NavItem(
-                  icon: Icons.access_time_rounded,
-                  label: 'Time Tracker',
-                  selected: selectedSection == _NavSection.timeTracker,
-                  onTap: () => onNavItemSelected(_NavSection.timeTracker),
-                ),
-                const SizedBox(height: 8),
-                _NavItem(
-                  icon: Icons.bar_chart_rounded,
-                  label: 'Report',
-                  selected: selectedSection == _NavSection.report,
-                  onTap: () => onNavItemSelected(_NavSection.report),
-                ),
-                const SizedBox(height: 8),
-                _NavItem(
-                  icon: Icons.receipt_long_rounded,
-                  label: 'Expenses',
-                  selected: selectedSection == _NavSection.expenses,
-                  onTap: () => onNavItemSelected(_NavSection.expenses),
-                ),
-                const SizedBox(height: 8),
-                _NavItem(
-                  icon: Icons.calendar_month_rounded,
-                  label: 'Calendar',
-                  selected: selectedSection == _NavSection.calendar,
-                  onTap: () => onNavItemSelected(_NavSection.calendar),
-                ),
-                const SizedBox(height: 8),
-                _NavItem(
-                  icon: Icons.folder_copy_rounded,
-                  label: 'Projects',
-                  selected: selectedSection == _NavSection.projects,
-                  onTap: () => onNavItemSelected(_NavSection.projects),
-                ),
-                const SizedBox(height: 8),
-                _NavItem(
-                  icon: Icons.groups_rounded,
-                  label: 'Members',
-                  selected: selectedSection == _NavSection.members,
-                  onTap: () => onNavItemSelected(_NavSection.members),
-                ),
+                for (int i = 0; i < _navEntries.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 8),
+                  _NavItem(
+                    icon: _navEntries[i].icon,
+                    label: _navEntries[i].label,
+                    selected: selectedSection == _navEntries[i].section,
+                    onTap: () => onNavItemSelected(_navEntries[i].section),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1356,38 +1381,10 @@ class _PlaceholderSection extends StatelessWidget {
 
   final _NavSection section;
 
-  static const _sectionMeta = <_NavSection, ({IconData icon, String label, String description})>{
-    _NavSection.report: (
-      icon: Icons.bar_chart_rounded,
-      label: 'Report',
-      description: 'Detailed time reports and analytics will be available here.',
-    ),
-    _NavSection.expenses: (
-      icon: Icons.receipt_long_rounded,
-      label: 'Expenses',
-      description: 'Track and manage your project expenses here.',
-    ),
-    _NavSection.calendar: (
-      icon: Icons.calendar_month_rounded,
-      label: 'Calendar',
-      description: 'A calendar view of your time entries will be available here.',
-    ),
-    _NavSection.projects: (
-      icon: Icons.folder_copy_rounded,
-      label: 'Projects',
-      description: 'Manage your projects and clients here.',
-    ),
-    _NavSection.members: (
-      icon: Icons.groups_rounded,
-      label: 'Members',
-      description: 'Manage team members and their roles here.',
-    ),
-  };
-
   @override
   Widget build(BuildContext context) {
-    final meta = _sectionMeta[section];
-    if (meta == null) {
+    final entry = _navEntries.where((e) => e.section == section).firstOrNull;
+    if (entry == null || entry.description == null) {
       return const SizedBox.shrink();
     }
 
@@ -1414,14 +1411,14 @@ class _PlaceholderSection extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Icon(
-                    meta.icon,
+                    entry.icon,
                     size: 32,
                     color: const Color(0xFF1E7BF2),
                   ),
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  meta.label,
+                  entry.label,
                   style: const TextStyle(
                     color: Color(0xFF132039),
                     fontSize: 22,
@@ -1430,7 +1427,7 @@ class _PlaceholderSection extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  meta.description,
+                  entry.description!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Color(0xFF61708C),
