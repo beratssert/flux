@@ -706,7 +706,7 @@ class _DayCell extends StatelessWidget {
     if (name != null && name.isNotEmpty) {
       return name;
     }
-    return 'Project $projectId';
+    return 'Workspace Project $projectId';
   }
 }
 
