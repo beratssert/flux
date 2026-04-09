@@ -11,6 +11,15 @@ import '../../auth/data/auth_session_controller.dart';
 import '../data/time_tracker_api_client.dart';
 import '../data/time_tracker_models.dart';
 
+enum _AppSection {
+  timeTracker,
+  report,
+  expenses,
+  calendar,
+  projects,
+  members,
+}
+
 class TimeTrackerPage extends ConsumerStatefulWidget {
   const TimeTrackerPage({super.key});
 
@@ -21,6 +30,7 @@ class TimeTrackerPage extends ConsumerStatefulWidget {
 class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
   final TextEditingController _descriptionController = TextEditingController();
 
+  _AppSection _currentSection = _AppSection.timeTracker;
   Timer? _ticker;
   bool _loading = true;
   bool _submitting = false;
@@ -713,6 +723,12 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
     _showMessage('Settings panel is not available yet.');
   }
 
+  void _onSectionChanged(_AppSection section) {
+    setState(() {
+      _currentSection = section;
+    });
+  }
+
   void _startTicker() {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted && _activeTimer != null) {
@@ -891,13 +907,15 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
           child: SafeArea(
             child: _Sidebar(
               profile: profile,
+              selectedSection: _currentSection,
+              onSectionChanged: _onSectionChanged,
               logoutBusy: _submitting,
               onSettings: _showSettingsMessage,
               onLogout: _logout,
             ),
           ),
         ),
-        body: _buildMainArea(profile, isCompact),
+        body: _buildSectionContent(profile, isCompact),
       );
     }
 
@@ -910,18 +928,62 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
               width: 286,
               child: _Sidebar(
                 profile: profile,
+                selectedSection: _currentSection,
+                onSectionChanged: _onSectionChanged,
                 logoutBusy: _submitting,
                 onSettings: _showSettingsMessage,
                 onLogout: _logout,
               ),
             ),
             Expanded(
-              child: _buildMainArea(profile, isCompact),
+              child: _buildSectionContent(profile, isCompact),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSectionContent(AuthProfile profile, bool isCompact) {
+    switch (_currentSection) {
+      case _AppSection.timeTracker:
+        return _buildMainArea(profile, isCompact);
+      case _AppSection.report:
+        return const _PlaceholderSection(
+          icon: Icons.bar_chart_rounded,
+          title: 'Reports',
+          description:
+              'Detailed time and project reports will appear here once this section is available.',
+        );
+      case _AppSection.expenses:
+        return const _PlaceholderSection(
+          icon: Icons.receipt_long_rounded,
+          title: 'Expenses',
+          description:
+              'Track and manage your project expenses here once this section is available.',
+        );
+      case _AppSection.calendar:
+        return const _PlaceholderSection(
+          icon: Icons.calendar_month_rounded,
+          title: 'Calendar',
+          description:
+              'A visual calendar view of your tracked time will appear here once this section is available.',
+        );
+      case _AppSection.projects:
+        return const _PlaceholderSection(
+          icon: Icons.folder_copy_rounded,
+          title: 'Projects',
+          description:
+              'Browse and manage your projects here once this section is available.',
+        );
+      case _AppSection.members:
+        return const _PlaceholderSection(
+          icon: Icons.groups_rounded,
+          title: 'Members',
+          description:
+              'View and manage team members and their time entries here once this section is available.',
+        );
+    }
   }
 
   Widget _buildMainArea(AuthProfile profile, bool isCompact) {
@@ -1085,15 +1147,31 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
 class _Sidebar extends StatelessWidget {
   const _Sidebar({
     required this.profile,
+    required this.selectedSection,
+    required this.onSectionChanged,
     required this.logoutBusy,
     required this.onSettings,
     required this.onLogout,
   });
 
   final AuthProfile profile;
+  final _AppSection selectedSection;
+  final ValueChanged<_AppSection> onSectionChanged;
   final bool logoutBusy;
   final VoidCallback onSettings;
   final VoidCallback onLogout;
+
+  bool get _canSeeMembers {
+    final role = profile.role?.trim().toLowerCase() ?? '';
+    return role == 'manager' || role == 'admin' || role == 'superadmin';
+  }
+
+  void _handleSectionTap(BuildContext context, _AppSection section) {
+    if (Scaffold.maybeOf(context)?.isDrawerOpen == true) {
+      Navigator.of(context).pop();
+    }
+    onSectionChanged(section);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1134,22 +1212,56 @@ class _Sidebar extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: const [
+              children: [
                 _NavItem(
                   icon: Icons.access_time_rounded,
                   label: 'Time Tracker',
-                  selected: true,
+                  selected: selectedSection == _AppSection.timeTracker,
+                  onTap: () =>
+                      _handleSectionTap(context, _AppSection.timeTracker),
                 ),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.bar_chart_rounded, label: 'Report'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.receipt_long_rounded, label: 'Expenses'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.calendar_month_rounded, label: 'Calendar'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.folder_copy_rounded, label: 'Projects'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.groups_rounded, label: 'Members'),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.bar_chart_rounded,
+                  label: 'Report',
+                  selected: selectedSection == _AppSection.report,
+                  onTap: () =>
+                      _handleSectionTap(context, _AppSection.report),
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Expenses',
+                  selected: selectedSection == _AppSection.expenses,
+                  onTap: () =>
+                      _handleSectionTap(context, _AppSection.expenses),
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.calendar_month_rounded,
+                  label: 'Calendar',
+                  selected: selectedSection == _AppSection.calendar,
+                  onTap: () =>
+                      _handleSectionTap(context, _AppSection.calendar),
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.folder_copy_rounded,
+                  label: 'Projects',
+                  selected: selectedSection == _AppSection.projects,
+                  onTap: () =>
+                      _handleSectionTap(context, _AppSection.projects),
+                ),
+                if (_canSeeMembers) ...[
+                  const SizedBox(height: 8),
+                  _NavItem(
+                    icon: Icons.groups_rounded,
+                    label: 'Members',
+                    selected: selectedSection == _AppSection.members,
+                    onTap: () =>
+                        _handleSectionTap(context, _AppSection.members),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1245,42 +1357,51 @@ class _Sidebar extends StatelessWidget {
   }
 }
 
+
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
     required this.label,
+    required this.onTap,
     this.selected = false,
   });
 
   final IconData icon;
   final String label;
+  final VoidCallback onTap;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      decoration: BoxDecoration(
-        color: selected ? const Color(0xFFDCEEFF) : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
-          ),
-          const SizedBox(width: 14),
-          Text(
-            label,
-            style: TextStyle(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFDCEEFF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
               color:
-                  selected ? const Color(0xFF1E7BF2) : const Color(0xFF53627C),
-              fontSize: 15,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected
+                    ? const Color(0xFF1E7BF2)
+                    : const Color(0xFF53627C),
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2233,6 +2354,67 @@ class _EmptyEntriesCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PlaceholderSection extends StatelessWidget {
+  const _PlaceholderSection({
+    required this.icon,
+    required this.title,
+    required this.description,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE4EAF4)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  icon,
+                  size: 46,
+                  color: const Color(0xFF1E7BF2),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF132039),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  description,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF61708C),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
