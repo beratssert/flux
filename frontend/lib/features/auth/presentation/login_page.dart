@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router.dart';
 import '../data/auth_session_controller.dart';
-import 'forgot_password_page.dart';
-import 'register_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -168,11 +167,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               onPressed: _loading
                                   ? null
                                   : () {
-                                      Navigator.of(context).push(
-                                        MaterialPageRoute<void>(
-                                          builder: (_) =>
-                                              const ForgotPasswordPage(),
-                                        ),
+                                      Navigator.of(context).pushNamed(
+                                        AppRoutes.forgotPassword,
                                       );
                                     },
                               child: const Text('Forgot?'),
@@ -222,11 +218,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 onPressed: _loading
                                     ? null
                                     : () {
-                                        Navigator.of(context).push(
-                                          MaterialPageRoute<void>(
-                                            builder: (_) =>
-                                                const RegisterPage(),
-                                          ),
+                                        Navigator.of(context).pushNamed(
+                                          AppRoutes.register,
                                         );
                                       },
                                 child: const Text('Sign up'),

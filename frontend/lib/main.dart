@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/router.dart';
 import 'features/auth/data/auth_session_controller.dart';
 import 'features/auth/presentation/login_page.dart';
 import 'features/time_tracker/presentation/time_tracker_page.dart';
@@ -17,6 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flux',
       debugShowCheckedModeBanner: false,
+      onGenerateRoute: AppRouter.generateRoute,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(

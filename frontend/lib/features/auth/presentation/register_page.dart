@@ -2,9 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router.dart';
 import '../data/auth_api_client.dart';
-import 'confirm_email_page.dart';
-import 'login_page.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -51,11 +50,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
       if (!mounted) return;
       // Kayıt başarılıysa email doğrulama ekranına yönlendir.
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(
-          builder: (_) => const ConfirmEmailPage(),
-        ),
-      );
+      Navigator.of(context).pushReplacementNamed(AppRoutes.confirmEmail);
     } on DioException catch (e) {
       final data = e.response?.data;
       String friendly = 'Kayıt başarısız';
@@ -332,10 +327,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                 onPressed: _loading
                                     ? null
                                     : () {
-                                        Navigator.of(context).pushReplacement(
-                                          MaterialPageRoute<void>(
-                                            builder: (_) => const LoginPage(),
-                                          ),
+                                        Navigator.of(context)
+                                            .pushReplacementNamed(
+                                          AppRoutes.login,
                                         );
                                       },
                                 child: const Text('Sign in'),

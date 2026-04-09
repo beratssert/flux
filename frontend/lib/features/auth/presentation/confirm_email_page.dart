@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/router.dart';
 import '../data/auth_api_client.dart';
-import 'login_page.dart';
 
 class ConfirmEmailPage extends ConsumerStatefulWidget {
   const ConfirmEmailPage({super.key});
@@ -212,10 +212,9 @@ class _ConfirmEmailPageState extends ConsumerState<ConfirmEmailPage> {
                                 onPressed: _loading
                                     ? null
                                     : () {
-                                        Navigator.of(context).pushReplacement(
-                                          MaterialPageRoute<void>(
-                                            builder: (_) => const LoginPage(),
-                                          ),
+                                        Navigator.of(context)
+                                            .pushReplacementNamed(
+                                          AppRoutes.login,
                                         );
                                       },
                                 child: const Text('Sign in'),
