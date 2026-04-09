@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_error_message.dart';
@@ -10,6 +11,10 @@ import '../../auth/data/auth_models.dart';
 import '../../auth/data/auth_session_controller.dart';
 import '../data/time_tracker_api_client.dart';
 import '../data/time_tracker_models.dart';
+
+const _kRoleManager = 'manager';
+const _kRoleAdmin = 'admin';
+const _kRoleSuperAdmin = 'superadmin';
 
 enum _AppSection {
   timeTracker,
@@ -1163,12 +1168,18 @@ class _Sidebar extends StatelessWidget {
 
   bool get _canSeeMembers {
     final role = profile.role?.trim().toLowerCase() ?? '';
-    return role == 'manager' || role == 'admin' || role == 'superadmin';
+    return role == _kRoleManager ||
+        role == _kRoleAdmin ||
+        role == _kRoleSuperAdmin;
   }
 
   void _handleSectionTap(BuildContext context, _AppSection section) {
     if (Scaffold.maybeOf(context)?.isDrawerOpen == true) {
       Navigator.of(context).pop();
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        onSectionChanged(section);
+      });
+      return;
     }
     onSectionChanged(section);
   }
