@@ -355,5 +355,55 @@ namespace CleanArchitecture.Infrastructure.Tests
             Assert.Equal(projectId, rows[0].ProjectId);
             Assert.Equal(95, rows[0].DurationMinutes);
         }
+
+        [Fact]
+        public async Task GetPagedByManagerVisibilityAsync_ShouldIncludeManagerOwnAndManagedTeamExpenses()
+        {
+            const string managerUserId = "manager-exp-1";
+            _context.Projects.AddRange(
+                new Project { Id = 800, Name = "ManagedExpenseProject", ManagerUserId = managerUserId, Status = "Active" },
+                new Project { Id = 801, Name = "OtherExpenseProject", ManagerUserId = "another-manager", Status = "Active" });
+            _context.ExpenseCategories.Add(new ExpenseCategory { Id = 1, Name = "Travel", IsActive = true });
+            _context.Expenses.AddRange(
+                new Expense
+                {
+                    UserId = managerUserId,
+                    ProjectId = 801,
+                    CategoryId = 1,
+                    ExpenseDate = DateTime.UtcNow.Date,
+                    Amount = 10,
+                    CurrencyCode = "TRY",
+                    Status = "Draft"
+                },
+                new Expense
+                {
+                    UserId = "employee-exp-1",
+                    ProjectId = 800,
+                    CategoryId = 1,
+                    ExpenseDate = DateTime.UtcNow.Date,
+                    Amount = 20,
+                    CurrencyCode = "TRY",
+                    Status = "Submitted"
+                },
+                new Expense
+                {
+                    UserId = "employee-exp-2",
+                    ProjectId = 801,
+                    CategoryId = 1,
+                    ExpenseDate = DateTime.UtcNow.Date,
+                    Amount = 30,
+                    CurrencyCode = "TRY",
+                    Status = "Submitted"
+                });
+            await _context.SaveChangesAsync();
+
+            var repository = new ExpenseRepositoryAsync(_context);
+            var rows = await repository.GetPagedByManagerVisibilityAsync(managerUserId, 1, 20);
+
+            Assert.Equal(2, rows.Count);
+            Assert.Contains(rows, e => e.UserId == managerUserId);
+            Assert.Contains(rows, e => e.UserId == "employee-exp-1");
+            Assert.DoesNotContain(rows, e => e.UserId == "employee-exp-2");
+        }
     }
 }

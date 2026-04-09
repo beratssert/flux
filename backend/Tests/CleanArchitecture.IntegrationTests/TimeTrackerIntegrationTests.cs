@@ -86,6 +86,31 @@ public class TimeTrackerIntegrationTests
         Assert.True(auditCount > 0);
     }
 
+    [Fact]
+    public async Task ExpensesEndpoint_WithoutToken_ReturnsUnauthorized()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var response = await client.GetAsync("/api/v1/Expenses?pageNumber=1&pageSize=10");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task RejectExpense_EmployeeForbidden()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/Expenses/1/reject")
+        {
+            Content = JsonContent.Create(new { id = 1, reason = "invalid-receipt" })
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     private static async Task<string> LoginAndGetTokenAsync(HttpClient client, string email, string password)
     {
         var response = await client.PostAsJsonAsync("/api/v1/auth/login", new
