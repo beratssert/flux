@@ -18,6 +18,15 @@ class TimeTrackerPage extends ConsumerStatefulWidget {
   ConsumerState<TimeTrackerPage> createState() => _TimeTrackerPageState();
 }
 
+enum _NavSection {
+  timeTracker,
+  report,
+  expenses,
+  calendar,
+  projects,
+  members,
+}
+
 class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
   final TextEditingController _descriptionController = TextEditingController();
 
@@ -32,6 +41,7 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
   AuthProfile? _liveProfile;
   int? _selectedProjectId;
   bool _isBillable = false;
+  _NavSection _selectedSection = _NavSection.timeTracker;
 
   @override
   void initState() {
@@ -892,6 +902,13 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
             child: _Sidebar(
               profile: profile,
               logoutBusy: _submitting,
+              selectedSection: _selectedSection,
+              onNavItemSelected: (section) {
+                setState(() {
+                  _selectedSection = section;
+                });
+                Navigator.of(context).pop();
+              },
               onSettings: _showSettingsMessage,
               onLogout: _logout,
             ),
@@ -911,6 +928,12 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
               child: _Sidebar(
                 profile: profile,
                 logoutBusy: _submitting,
+                selectedSection: _selectedSection,
+                onNavItemSelected: (section) {
+                  setState(() {
+                    _selectedSection = section;
+                  });
+                },
                 onSettings: _showSettingsMessage,
                 onLogout: _logout,
               ),
@@ -925,6 +948,10 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
   }
 
   Widget _buildMainArea(AuthProfile profile, bool isCompact) {
+    if (_selectedSection != _NavSection.timeTracker) {
+      return _PlaceholderSection(section: _selectedSection);
+    }
+
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -1086,12 +1113,16 @@ class _Sidebar extends StatelessWidget {
   const _Sidebar({
     required this.profile,
     required this.logoutBusy,
+    required this.selectedSection,
+    required this.onNavItemSelected,
     required this.onSettings,
     required this.onLogout,
   });
 
   final AuthProfile profile;
   final bool logoutBusy;
+  final _NavSection selectedSection;
+  final ValueChanged<_NavSection> onNavItemSelected;
   final VoidCallback onSettings;
   final VoidCallback onLogout;
 
@@ -1134,22 +1165,48 @@ class _Sidebar extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: const [
+              children: [
                 _NavItem(
                   icon: Icons.access_time_rounded,
                   label: 'Time Tracker',
-                  selected: true,
+                  selected: selectedSection == _NavSection.timeTracker,
+                  onTap: () => onNavItemSelected(_NavSection.timeTracker),
                 ),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.bar_chart_rounded, label: 'Report'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.receipt_long_rounded, label: 'Expenses'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.calendar_month_rounded, label: 'Calendar'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.folder_copy_rounded, label: 'Projects'),
-                SizedBox(height: 8),
-                _NavItem(icon: Icons.groups_rounded, label: 'Members'),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.bar_chart_rounded,
+                  label: 'Report',
+                  selected: selectedSection == _NavSection.report,
+                  onTap: () => onNavItemSelected(_NavSection.report),
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Expenses',
+                  selected: selectedSection == _NavSection.expenses,
+                  onTap: () => onNavItemSelected(_NavSection.expenses),
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.calendar_month_rounded,
+                  label: 'Calendar',
+                  selected: selectedSection == _NavSection.calendar,
+                  onTap: () => onNavItemSelected(_NavSection.calendar),
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.folder_copy_rounded,
+                  label: 'Projects',
+                  selected: selectedSection == _NavSection.projects,
+                  onTap: () => onNavItemSelected(_NavSection.projects),
+                ),
+                const SizedBox(height: 8),
+                _NavItem(
+                  icon: Icons.groups_rounded,
+                  label: 'Members',
+                  selected: selectedSection == _NavSection.members,
+                  onTap: () => onNavItemSelected(_NavSection.members),
+                ),
               ],
             ),
           ),
@@ -1250,37 +1307,158 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.label,
     this.selected = false,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      decoration: BoxDecoration(
-        color: selected ? const Color(0xFFDCEEFF) : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
-          ),
-          const SizedBox(width: 14),
-          Text(
-            label,
-            style: TextStyle(
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFDCEEFF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              icon,
               color:
-                  selected ? const Color(0xFF1E7BF2) : const Color(0xFF53627C),
-              fontSize: 15,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
+            ),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected
+                    ? const Color(0xFF1E7BF2)
+                    : const Color(0xFF53627C),
+                fontSize: 15,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlaceholderSection extends StatelessWidget {
+  const _PlaceholderSection({required this.section});
+
+  final _NavSection section;
+
+  static const _sectionMeta = <_NavSection, ({IconData icon, String label, String description})>{
+    _NavSection.report: (
+      icon: Icons.bar_chart_rounded,
+      label: 'Report',
+      description: 'Detailed time reports and analytics will be available here.',
+    ),
+    _NavSection.expenses: (
+      icon: Icons.receipt_long_rounded,
+      label: 'Expenses',
+      description: 'Track and manage your project expenses here.',
+    ),
+    _NavSection.calendar: (
+      icon: Icons.calendar_month_rounded,
+      label: 'Calendar',
+      description: 'A calendar view of your time entries will be available here.',
+    ),
+    _NavSection.projects: (
+      icon: Icons.folder_copy_rounded,
+      label: 'Projects',
+      description: 'Manage your projects and clients here.',
+    ),
+    _NavSection.members: (
+      icon: Icons.groups_rounded,
+      label: 'Members',
+      description: 'Manage team members and their roles here.',
+    ),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final meta = _sectionMeta[section];
+    if (meta == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Container(
+            padding: const EdgeInsets.all(36),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE4EAF4)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAF2FF),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    meta.icon,
+                    size: 32,
+                    color: const Color(0xFF1E7BF2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  meta.label,
+                  style: const TextStyle(
+                    color: Color(0xFF132039),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  meta.description,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFF61708C),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F7FB),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Coming soon',
+                    style: TextStyle(
+                      color: Color(0xFF5B6B86),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
