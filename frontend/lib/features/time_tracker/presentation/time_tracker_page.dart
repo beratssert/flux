@@ -1040,7 +1040,7 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
   }
 }
 
-class _Sidebar extends StatelessWidget {
+class _TopTrackerBar extends StatelessWidget {
   const _TopTrackerBar({
     required this.profile,
     required this.descriptionController,
