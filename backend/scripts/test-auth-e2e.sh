@@ -90,7 +90,7 @@ mgr_token=$(echo "$mgr_login" | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
 
 echo "[INFO] Manager reads users list"
 users_list_resp=$(curl -s -H "Authorization: Bearer $mgr_token" "$base_url/api/v1/users?pageNumber=1&pageSize=50")
-assert_contains "$users_list_resp" '"data":' "Manager can read team users list"
+assert_contains "$users_list_resp" '"items":' "Manager can read team users list"
 
 mgr_user_id=$(echo "$mgr_login" | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
 

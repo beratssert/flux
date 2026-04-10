@@ -84,6 +84,20 @@ echo "[INFO] Employee cannot read manager team summary"
 employee_team_status=$(curl -s -o /dev/null -w "%{http_code}" "$base_url/api/v1/reports/manager/team-time-summary?groupBy=user" -H "Authorization: Bearer $employee_token")
 assert_status "$employee_team_status" "403" "Employee blocked from manager team summary"
 
+echo "[INFO] Employee can read self expense summary"
+my_expense_summary=$(curl -s "$base_url/api/v1/reports/me/expense-summary?groupBy=project&currencyCode=TRY" -H "Authorization: Bearer $employee_token")
+assert_contains "$my_expense_summary" '"totalAmount":' "Self expense summary returns total amount"
+assert_contains "$my_expense_summary" '"groups":' "Self expense summary returns groups"
+
+echo "[INFO] Manager can read team expense summary"
+team_expense_summary=$(curl -s "$base_url/api/v1/reports/manager/team-expense-summary?groupBy=user&currencyCode=TRY" -H "Authorization: Bearer $manager_token")
+assert_contains "$team_expense_summary" '"totalAmount":' "Team expense summary returns total amount"
+assert_contains "$team_expense_summary" '"groups":' "Team expense summary returns groups"
+
+echo "[INFO] Employee cannot read manager team expense summary"
+employee_team_expense_status=$(curl -s -o /dev/null -w "%{http_code}" "$base_url/api/v1/reports/manager/team-expense-summary?groupBy=user" -H "Authorization: Bearer $employee_token")
+assert_status "$employee_team_expense_status" "403" "Employee blocked from manager team expense summary"
+
 echo "[INFO] CSV export works for self summary"
 headers_file=$(mktemp)
 export_status=$(curl -s -D "$headers_file" -o /dev/null -w "%{http_code}" "$base_url/api/v1/reports/me/time-summary/export?format=csv&groupBy=week" -H "Authorization: Bearer $employee_token")
@@ -99,5 +113,21 @@ team_export_headers=$(cat "$team_headers_file")
 rm -f "$team_headers_file"
 assert_status "$team_export_status" "200" "Manager team summary export returns 200"
 assert_contains "$team_export_headers" "text/csv" "Manager team summary export returns csv content-type"
+
+echo "[INFO] CSV export works for self expense summary"
+expense_headers_file=$(mktemp)
+expense_export_status=$(curl -s -D "$expense_headers_file" -o /dev/null -w "%{http_code}" "$base_url/api/v1/reports/me/expense-summary/export?format=csv&groupBy=project&currencyCode=TRY" -H "Authorization: Bearer $employee_token")
+expense_export_headers=$(cat "$expense_headers_file")
+rm -f "$expense_headers_file"
+assert_status "$expense_export_status" "200" "Self expense summary export returns 200"
+assert_contains "$expense_export_headers" "text/csv" "Self expense summary export returns csv content-type"
+
+echo "[INFO] CSV export works for manager team expense summary"
+team_expense_headers_file=$(mktemp)
+team_expense_export_status=$(curl -s -D "$team_expense_headers_file" -o /dev/null -w "%{http_code}" "$base_url/api/v1/reports/manager/team-expense-summary/export?format=csv&groupBy=user&currencyCode=TRY" -H "Authorization: Bearer $manager_token")
+team_expense_export_headers=$(cat "$team_expense_headers_file")
+rm -f "$team_expense_headers_file"
+assert_status "$team_expense_export_status" "200" "Manager team expense summary export returns 200"
+assert_contains "$team_expense_export_headers" "text/csv" "Manager team expense summary export returns csv content-type"
 
 echo "[INFO] Reports E2E tests completed successfully"

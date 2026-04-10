@@ -1,10 +1,14 @@
 using System;
+using CleanArchitecture.Infrastructure.Contexts;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace CleanArchitecture.Infrastructure.Migrations
 {
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260408120000_AddExpensesCoreModule")]
     public partial class AddExpensesCoreModule : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
