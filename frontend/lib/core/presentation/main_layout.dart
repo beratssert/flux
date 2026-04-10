@@ -17,7 +17,8 @@ class MainLayout extends ConsumerWidget {
       profile: profile!,
       logoutBusy: false,
       onSettings: () {},
-      onLogout: () => ref.read(authSessionControllerProvider.notifier).signOut(),
+      onLogout: () =>
+          ref.read(authSessionControllerProvider.notifier).signOut(),
     );
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FB),
@@ -103,12 +104,19 @@ class _Sidebar extends StatelessWidget {
                 const SizedBox(height: 8),
                 _NavItem(icon: Icons.bar_chart_rounded, label: 'Report'),
                 const SizedBox(height: 8),
-                _NavItem(icon: Icons.receipt_long_rounded, label: 'Expenses'),
+                _NavItem(
+                  icon: Icons.receipt_long_rounded,
+                  label: 'Expenses',
+                  selected:
+                      GoRouterState.of(context).uri.toString() == '/expenses',
+                  onTap: () => context.go('/expenses'),
+                ),
                 const SizedBox(height: 8),
                 _NavItem(
-                  icon: Icons.calendar_month_rounded, 
+                  icon: Icons.calendar_month_rounded,
                   label: 'Calendar',
-                  selected: GoRouterState.of(context).uri.toString() == '/calendar',
+                  selected:
+                      GoRouterState.of(context).uri.toString() == '/calendar',
                   onTap: () => context.go('/calendar'),
                 ),
                 const SizedBox(height: 8),
@@ -238,14 +246,16 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
+              color:
+                  selected ? const Color(0xFF1E7BF2) : const Color(0xFF728099),
             ),
             const SizedBox(width: 14),
             Text(
               label,
               style: TextStyle(
-                color:
-                    selected ? const Color(0xFF1E7BF2) : const Color(0xFF53627C),
+                color: selected
+                    ? const Color(0xFF1E7BF2)
+                    : const Color(0xFF53627C),
                 fontSize: 15,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
               ),
@@ -255,7 +265,9 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
-}String _initialsFor(String name) {
+}
+
+String _initialsFor(String name) {
   final parts = name.trim().split(' ');
   if (parts.isEmpty) return 'U';
   if (parts.length == 1) {

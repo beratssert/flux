@@ -6,6 +6,7 @@ import '../../features/auth/data/auth_session_controller.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/time_tracker/presentation/time_tracker_page.dart';
 import '../../features/calendar/presentation/pages/calendar_page.dart';
+import '../../features/expenses/presentation/expenses_page.dart';
 import '../presentation/main_layout.dart';
 import '../presentation/launch_screen.dart';
 import '../presentation/launch_screen.dart';
@@ -53,6 +54,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/calendar',
             builder: (context, state) => const CalendarPage(),
+          ),
+          GoRoute(
+            path: '/expenses',
+            builder: (context, state) => const ExpensesPage(),
           ),
         ],
       ),
