@@ -1,12 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../data/models/time_entry_model.dart';
 import '../../data/services/calendar_service.dart';
-
-// Service Provider
-final calendarServiceProvider = Provider<CalendarService>((ref) {
-  return CalendarService();
-});
+import '../../../auth/data/auth_session_controller.dart';
 
 // State for Calendar
 class CalendarState {
@@ -41,33 +36,14 @@ class CalendarState {
 class CalendarNotifier extends StateNotifier<CalendarState> {
   final CalendarService _service;
 
-  CalendarNotifier(this._service) : super(CalendarState()) {
+  CalendarNotifier(this._service,
+      {required String role, required String userId})
+      : super(CalendarState(role: role, userId: userId)) {
     _initAndFetch();
   }
 
   Future<void> _initAndFetch() async {
-    // 1. Token'dan Rolü Oku
-    final token = _service.getTempToken();
-    Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-
-    // Rol claim'ini bul (Genelde standart JWT veya Microsoft claim'i olur)
-    String role = 'Employee';
-    const roleClaim =
-        'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
-    if (decodedToken.containsKey(roleClaim)) {
-      role = decodedToken[roleClaim];
-    } else if (decodedToken.containsKey('role')) {
-      role = decodedToken['role'];
-    }
-
-    String userId = '';
-    if (decodedToken.containsKey('uid')) {
-      userId = decodedToken['uid'];
-    } else if (decodedToken.containsKey('sub')) {
-      userId = decodedToken['sub'];
-    }
-
-    state = state.copyWith(role: role, userId: userId, isLoading: true);
+    state = state.copyWith(isLoading: true);
 
     // 2. Rol bazlı veri çek
     await fetchEvents(DateTime.now().subtract(const Duration(days: 30)),
@@ -80,33 +56,29 @@ class CalendarNotifier extends StateNotifier<CalendarState> {
       state = state.copyWith(isLoading: true);
     }
     try {
-      List<TimeEntry> data;
-      if (state.role == 'Manager') {
-        data = await _service.getTeamTimeEntries(from, to);
-      } else {
-        data = await _service.getTimeEntries(from, to); // Employee (kendisi)
-      }
+      // API dokümantasyonu gereği "GET /api/v1/time-entries" ucu, manager için hem kendi hem de takımının time entry'lerini döner.
+      final data = await _service.getTimeEntries(from, to);
       state = state.copyWith(entries: data, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false);
     }
   }
 
-  Future<bool> addEvent(
-      int projectId, String description, int duration, DateTime date) async {
-    final success = await _service.createTimeEntry(
+  Future<({bool success, String? errorMessage})> addEvent(
+      String projectId, String description, int duration, DateTime date) async {
+    final result = await _service.createTimeEntry(
       projectId: projectId,
       description: description,
       duration: duration,
       date: date,
     );
-    if (success) {
+    if (result.success) {
       // Yenile, ancak loading spinneri çıkarma
       await fetchEvents(DateTime.now().subtract(const Duration(days: 30)),
           DateTime.now().add(const Duration(days: 30)),
           silent: true);
     }
-    return success;
+    return result;
   }
 
   Future<bool> updateEventTime(TimeEntry entry, DateTime newStartTime) async {
@@ -176,7 +148,7 @@ class CalendarNotifier extends StateNotifier<CalendarState> {
     return success;
   }
 
-  Future<bool> deleteEvent(int id) async {
+  Future<bool> deleteEvent(String id) async {
     // İyimser Güncelleme: Listeden anında çıkar (göz kırpma olmasın)
     final optimisticEntries = state.entries.where((e) => e.id != id).toList();
     state = state.copyWith(entries: optimisticEntries);
@@ -194,5 +166,12 @@ class CalendarNotifier extends StateNotifier<CalendarState> {
 final calendarNotifierProvider =
     StateNotifierProvider<CalendarNotifier, CalendarState>((ref) {
   final service = ref.watch(calendarServiceProvider);
-  return CalendarNotifier(service);
+  final authState = ref.watch(authSessionControllerProvider);
+  final profile = authState.session?.profile;
+
+  return CalendarNotifier(
+    service,
+    role: profile?.role ?? 'Employee',
+    userId: profile?.id ?? '',
+  );
 });

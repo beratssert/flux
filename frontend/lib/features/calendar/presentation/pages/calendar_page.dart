@@ -17,6 +17,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   final CalendarController _calendarController = CalendarController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(calendarNotifierProvider.notifier).fetchEvents(
+            DateTime.now().subtract(const Duration(days: 30)),
+            DateTime.now().add(const Duration(days: 30)),
+          );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = ref.watch(calendarNotifierProvider);
 
@@ -153,6 +164,6 @@ class TimeEntryDataSource extends CalendarDataSource {
       Colors.teal,
       Colors.orange
     ];
-    return colors[entry.id % colors.length];
+    return colors[(entry.id.hashCode).abs() % colors.length];
   }
 }

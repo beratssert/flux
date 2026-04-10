@@ -74,9 +74,9 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
             onPressed: () => Navigator.pop(context),
             child: const Text("İptal")),
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             final dur = int.tryParse(durCtrl.text) ?? 60;
-            final proj = int.tryParse(projCtrl.text) ?? 1;
+            final proj = projCtrl.text.isEmpty ? "1" : projCtrl.text;
 
             final finalDateTime = DateTime(
               widget.selectedDate.year,
@@ -86,10 +86,28 @@ class _AddTaskDialogState extends ConsumerState<AddTaskDialog> {
               _selectedTime.minute,
             );
 
-            ref
+            final result = await ref
                 .read(calendarNotifierProvider.notifier)
                 .addEvent(proj, descCtrl.text, dur, finalDateTime);
-            Navigator.pop(context);
+
+            if (!context.mounted) return;
+
+            if (result.success) {
+              Navigator.pop(context);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    (result.errorMessage != null &&
+                            result.errorMessage!.isNotEmpty)
+                        ? result.errorMessage!
+                        : "Görev eklenirken bir hata oluştu veya yetkiniz yok.",
+                  ),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
           },
           child: const Text("Kaydet"),
         ),

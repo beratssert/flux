@@ -1,7 +1,7 @@
 class TimeEntry {
-  final int id;
+  final String id;
   final String userId;
-  final int projectId;
+  final String projectId;
   final String description;
   final DateTime startTime;
   final DateTime? endTime;
@@ -19,33 +19,63 @@ class TimeEntry {
 
   // JSON'dan Dart nesnesine çevrim (Factory pattern)
   factory TimeEntry.fromJson(Map<String, dynamic> json) {
-    // startTimeUtc null ise entryDate'i kullan
-    String? startTimeStr =
-        json['startTimeUtc'] as String? ?? json['entryDate'] as String?;
+    try {
+      String? startTimeStr = json['startTime']?.toString() ??
+          json['startTimeUtc']?.toString() ??
+          json['entryDate']?.toString() ??
+          json['StartTime']?.toString() ??
+          json['StartTimeUtc']?.toString();
+      DateTime parsedStartTime;
 
-    if (startTimeStr == null) {
-      throw Exception('startTimeUtc veya entryDate gerekli');
+      if (startTimeStr != null && startTimeStr.isNotEmpty) {
+        if (!startTimeStr.endsWith('Z') && !startTimeStr.contains('+')) {
+          startTimeStr += 'Z';
+        }
+        parsedStartTime = DateTime.parse(startTimeStr).toLocal();
+      } else {
+        parsedStartTime = DateTime.now();
+      }
+
+      String? endTimeStr = json['endTime']?.toString() ??
+          json['endTimeUtc']?.toString() ??
+          json['EndTime']?.toString() ??
+          json['EndTimeUtc']?.toString();
+      DateTime? parsedEndTime;
+
+      if (endTimeStr != null && endTimeStr.isNotEmpty) {
+        if (!endTimeStr.endsWith('Z') && !endTimeStr.contains('+')) {
+          endTimeStr += 'Z';
+        }
+        parsedEndTime = DateTime.parse(endTimeStr).toLocal();
+      }
+
+      int duration = (json['durationInMinutes'] as num?)?.toInt() ??
+          (json['DurationInMinutes'] as num?)?.toInt() ??
+          (json['durationMinutes'] as num?)?.toInt() ??
+          (json['DurationMinutes'] as num?)?.toInt() ??
+          0;
+
+      if (duration == 0 && parsedEndTime == null) {
+        duration = 60;
+      }
+
+      return TimeEntry(
+        id: json['id']?.toString() ?? json['Id']?.toString() ?? '',
+        userId: json['userId']?.toString() ?? json['UserId']?.toString() ?? '',
+        projectId: json['projectId']?.toString() ??
+            json['ProjectId']?.toString() ??
+            '',
+        description: json['description']?.toString() ??
+            json['Description']?.toString() ??
+            '',
+        startTime: parsedStartTime,
+        endTime: parsedEndTime,
+        durationMinutes: duration,
+      );
+    } catch (e, stack) {
+      print("TimeEntry.fromJson HATASI: $e \n JSON İçeriği: $json");
+      print(stack);
+      rethrow; // Bu liste okumasını dışarda kırar
     }
-
-    if (!startTimeStr.endsWith('Z') && !startTimeStr.contains('+')) {
-      startTimeStr += 'Z';
-    }
-
-    String? endTimeStr = json['endTimeUtc'] as String?;
-    if (endTimeStr != null &&
-        !endTimeStr.endsWith('Z') &&
-        !endTimeStr.contains('+')) {
-      endTimeStr += 'Z';
-    }
-
-    return TimeEntry(
-      id: json['id'] as int,
-      userId: json['userId'] as String? ?? '',
-      projectId: json['projectId'] as int? ?? 1,
-      description: json['description'] as String? ?? '',
-      startTime: DateTime.parse(startTimeStr).toLocal(),
-      endTime: endTimeStr != null ? DateTime.parse(endTimeStr).toLocal() : null,
-      durationMinutes: json['durationMinutes'] as int? ?? 0,
-    );
   }
 }

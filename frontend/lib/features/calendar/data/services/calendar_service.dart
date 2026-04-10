@@ -1,111 +1,139 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/app_config.dart';
+import '../../../auth/data/auth_session_controller.dart';
 import '../models/time_entry_model.dart';
 
-class CalendarService {
-  // Test ve Test Senaryosu: Bu kısmı login ekranı tamamlanana kadar kullanacağız.
-  // Lütfen Swagger API'den aldığınız 2 gerçek token'ı buraya yapıştırın:
-  static const String _employeeToken =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlbXBsb3llZSIsImp0aSI6ImY5MmI4MTQyLThhN2MtNDcyZS1iOTQwLTI3ZDdiYWE5YmI5ZiIsImVtYWlsIjoiZW1wbG95ZWVAZmx1eC5sb2NhbCIsInVpZCI6ImE1YjUzM2RjLTdmZDEtNGU1Yi05NzA1LTdkYzU3YzFjN2MwYiIsImlwIjoiMTcyLjE5LjAuMyIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkVtcGxveWVlIiwiZXhwIjoxNzc1NTQ2NDkwLCJpc3MiOiJDb3JlSWRlbnRpdHkiLCJhdWQiOiJDb3JlSWRlbnRpdHlVc2VyIn0.cH9TPHGmWkEUXLsA8tZbTDOEINWJxTO5h0stc3-cWYg";
-  static const String _managerToken =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJtYW5hZ2VyIiwianRpIjoiY2JhM2I5MWYtNzJmMi00MzJjLTgxNDAtZWVjZjUxMDBkZmUwIiwiZW1haWwiOiJtYW5hZ2VyQGZsdXgubG9jYWwiLCJ1aWQiOiI0YTI4NjljMi1jM2EzLTQwZjgtYTJiYy1kMTdmYjlkZTNmMjEiLCJpcCI6IjE3Mi4xOS4wLjQiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJNYW5hZ2VyIiwiZXhwIjoxNzc1NjEyNjQ0LCJpc3MiOiJDb3JlSWRlbnRpdHkiLCJhdWQiOiJDb3JlSWRlbnRpdHlVc2VyIn0.KXt0MKPozCKkiUOgEGt8nbG9jfqtSuK-tjl4pbyPtJI";
+final calendarServiceProvider = Provider<CalendarService>((ref) {
+  final authState = ref.watch(authSessionControllerProvider);
+  final token = authState.session?.accessToken ?? '';
 
-  // TEST İÇİN DEĞİŞTİR: true yaparsan uygulama Manager gibi davranır (ve /team uçlarını çeker)
-  // false yaparsan Employee gibi davranır (sadece kendi TimeEntries uçlarını çeker).
-  final bool _isTestingManager = false;
-
-  late final Dio _dio;
-
-  CalendarService() {
-    _dio = Dio(BaseOptions(
-      baseUrl: 'http://localhost:5001/api/v1',
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: AppConfig.apiBaseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
       headers: {
-        'Authorization':
-            'Bearer ${getTempToken()}', // Dinamik test token seçimi
         'Accept': 'application/json',
+        if (token.isNotEmpty) 'Authorization': 'Bearer $token',
       },
-    ));
-  }
+    ),
+  );
 
-  String getTempToken() => _isTestingManager ? _managerToken : _employeeToken;
+  return CalendarService(dio);
+});
 
-  Future<List<TimeEntry>> getTeamTimeEntries(DateTime from, DateTime to) async {
-    try {
-      final response = await _dio.get('/TimeEntries/team', queryParameters: {
-        'From': from.toIso8601String(),
-        'To': to.toIso8601String(),
-      });
+class CalendarService {
+  final Dio _dio;
 
-      if (response.statusCode == 200) {
-        final items = response.data['items'];
-        if (items != null && items is List) {
-          return items
-              .map((e) => TimeEntry.fromJson(e as Map<String, dynamic>))
-              .toList();
-        }
-      }
-      return [];
-    } on DioException catch (e) {
-      print("Sunucu Hatası (Team): ${e.response?.data}");
-      return [];
-    }
-  }
+  CalendarService(this._dio);
 
   Future<List<TimeEntry>> getTimeEntries(DateTime from, DateTime to) async {
     try {
-      final response = await _dio.get('/TimeEntries', queryParameters: {
-        'From': from.toIso8601String(),
-        'To': to.toIso8601String(),
+      final response = await _dio.get('/api/v1/TimeEntries', queryParameters: {
+        'from': from.toUtc().toIso8601String(),
+        'to': to.toUtc().toIso8601String(),
+        'StartDate':
+            from.toUtc().toIso8601String(), // İki ihtimali de yollayalım
+        'EndDate': to.toUtc().toIso8601String(),
+        'PageSize': 1000,
+        'PageNumber': 1,
+        'pageSize': 1000,
+        'pageNumber': 1,
       });
 
       if (response.statusCode == 200) {
-        final items = response.data['items'];
+        final responseData = (response.data is String)
+            ? jsonDecode(response.data)
+            : response.data;
+
+        // Backend "items" veya "data" veya "Data" olarak dönüyor olabilir
+        final items = responseData['data'] ??
+            responseData['Data'] ??
+            responseData['items'] ??
+            responseData['Items'];
+
+        print("Backend'den Dönen Ham Veri (TimeEntries): $responseData");
+
         if (items != null && items is List) {
-          return items
-              .map((e) => TimeEntry.fromJson(e as Map<String, dynamic>))
-              .toList();
+          print("JSON İçindeki Liste Uzunluğu: ${items.length}");
+          return items.map((e) {
+            print("Mapping Item: $e");
+            return TimeEntry.fromJson(e as Map<String, dynamic>);
+          }).toList();
+        } else {
+          print(
+              "HATA: Data içi liste olarak bulunamadı. Gelen format: ${responseData.runtimeType}");
         }
       }
       return [];
-    } on DioException catch (e) {
-      print("Sunucu Hatası: ${e.response?.data}");
+    } catch (e, stack) {
+      print("Takvim verisi çekerken JSON parse hatası: $e");
+      print(stack);
       return [];
     }
   }
 
-  Future<bool> createTimeEntry({
-    required int projectId,
+  Future<({bool success, String? errorMessage})> createTimeEntry({
+    required String projectId,
     required String description,
     required int duration,
     required DateTime date,
   }) async {
     try {
-      // Başlangıç saati: UI'dan gelen 'date' değerini (saat dahil) kullanıyoruz
       final startTime = date;
-      // Bitiş saati: startTime + duration (dakika cinsinden)
       final endTime = startTime.add(Duration(minutes: duration));
 
-      final response = await _dio.post('/TimeEntries', data: {
-        'projectId': projectId,
+      final response = await _dio.post('/api/v1/TimeEntries', data: {
+        'projectId': int.tryParse(projectId) ?? 0,
         'entryDate': startTime.toIso8601String(),
         'startTimeUtc': startTime.toUtc().toIso8601String(),
         'endTimeUtc': endTime.toUtc().toIso8601String(),
+        'durationMinutes': duration,
         'description': description,
         'isBillable': true,
       });
-      return response.statusCode == 200 || response.statusCode == 201;
+      return (
+        success: response.statusCode == 200 || response.statusCode == 201,
+        errorMessage: null
+      );
     } on DioException catch (e) {
-      print('Görev ekleme hatası: ${e.response?.statusCode}');
-      print('Hata detayı: ${e.response?.data}');
-      return false;
+      String? errorMsg;
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map<String, dynamic>) {
+          errorMsg = data['Message'] ??
+              data['message'] ??
+              data['detail'] ??
+              data['title'] ??
+              data.toString();
+
+          // CleanArchitecture.WebApi genelde Errors array döner validation error olursa.
+          if (data.containsKey('errors') &&
+              data['errors'] is List &&
+              (data['errors'] as List).isNotEmpty) {
+            errorMsg = (data['errors'] as List).first.toString();
+          }
+        } else {
+          errorMsg = data.toString();
+        }
+      } else {
+        errorMsg = e.message;
+      }
+      return (
+        success: false,
+        errorMessage:
+            errorMsg ?? "Bilinmeyen API hatası (Sunucu yanıt vermedi)."
+      );
     } catch (e) {
-      print('Görev ekleme hatası: $e');
-      return false;
+      return (success: false, errorMessage: "Beklenmeyen hata: $e");
     }
   }
 
   Future<bool> updateTimeEntry({
-    required int id,
-    required int projectId,
+    required String id,
+    required String projectId,
     required String description,
     required int duration,
     required DateTime date,
@@ -114,9 +142,9 @@ class CalendarService {
       final startTime = date;
       final endTime = startTime.add(Duration(minutes: duration));
 
-      final response = await _dio.put('/TimeEntries/$id', data: {
-        'id': id,
-        'projectId': projectId,
+      final response = await _dio.put('/api/v1/TimeEntries/$id', data: {
+        'id': int.tryParse(id) ?? 0,
+        'projectId': int.tryParse(projectId) ?? 0,
         'entryDate': startTime.toIso8601String(),
         'startTimeUtc': startTime.toUtc().toIso8601String(),
         'endTimeUtc': endTime.toUtc().toIso8601String(),
@@ -126,21 +154,22 @@ class CalendarService {
       });
       return response.statusCode == 200 || response.statusCode == 204;
     } on DioException catch (e) {
-      print('Görev güncelleme hatası: ${e.response?.statusCode}');
-      print('Hata detayı: ${e.response?.data}');
+      print("Update hatası: ${e.response?.data}");
       return false;
     } catch (e) {
-      print('Görev güncelleme hatası: $e');
       return false;
     }
   }
 
-  Future<bool> deleteTimeEntry(int id) async {
+  Future<bool> deleteTimeEntry(String id) async {
     try {
-      final response = await _dio.delete('/TimeEntries/$id');
+      final response = await _dio.delete('/api/v1/TimeEntries/$id');
       return response.statusCode == 200 || response.statusCode == 204;
+    } on DioException catch (e) {
+      print("Delete hatası: ${e.response?.data}");
+      return false;
     } catch (e) {
-      print('Görev silme hatası: $e');
+      print("Delete istisna: $e");
       return false;
     }
   }
