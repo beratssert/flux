@@ -10,8 +10,10 @@ using System.Threading.Tasks;
 
 namespace CleanArchitecture.Core.Features.Projects.Commands.UpdateProject
 {
+    /// <summary>Request body for <c>PATCH /projects/{id}</c>. <see cref="Id"/> is set from the route.</summary>
     public class UpdateProjectCommand : IRequest<ProjectViewModel>
     {
+        /// <summary>Set from route; ignored in JSON.</summary>
         public int Id { get; set; }
         public string Name { get; set; }
         public string Code { get; set; }

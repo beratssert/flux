@@ -11,6 +11,7 @@ using CleanArchitecture.Core.DTOs.Account;
 
 namespace CleanArchitecture.WebApi.Controllers.v1
 {
+    /// <summary>Current user profile and related resources.</summary>
     [ApiVersion("1.0")]
     [Authorize]
     [Route("api/v{version:apiVersion}/users")]
@@ -23,6 +24,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             _accountService = accountService;
         }
 
+        /// <summary>Active project assignments for the authenticated user.</summary>
+        /// <remarks>Policy: <c>Assignments.Read.Self</c>. <c>projectId</c> in each row is an integer.</remarks>
         [HttpGet("me/assignments")]
         [Authorize(Policy = "Assignments.Read.Self")]
         [ProducesResponseType(typeof(List<MyProjectAssignmentViewModel>), StatusCodes.Status200OK)]

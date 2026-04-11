@@ -12,9 +12,12 @@ using System.Threading.Tasks;
 
 namespace CleanArchitecture.Core.Features.Projects.Commands.CreateProjectAssignment
 {
+    /// <summary>Request body for <c>POST /projects/{projectId}/assignments</c>. <see cref="ProjectId"/> is set from the route.</summary>
     public class CreateProjectAssignmentCommand : IRequest<Unit>
     {
+        /// <summary>Set from route.</summary>
         public int ProjectId { get; set; }
+        /// <summary>Employee user id to assign.</summary>
         public string UserId { get; set; }
     }
 

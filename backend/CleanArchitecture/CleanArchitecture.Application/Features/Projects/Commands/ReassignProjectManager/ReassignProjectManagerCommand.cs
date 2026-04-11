@@ -13,9 +13,12 @@ using System.Threading.Tasks;
 
 namespace CleanArchitecture.Core.Features.Projects.Commands.ReassignProjectManager
 {
+    /// <summary>Request body for <c>PATCH /projects/{id}/manager</c> (Admin).</summary>
     public class ReassignProjectManagerCommand : IRequest<ProjectViewModel>
     {
+        /// <summary>Set from route.</summary>
         public int Id { get; set; }
+        /// <summary>New manager ASP.NET Identity user id (must have Manager role).</summary>
         public string ManagerUserId { get; set; }
     }
 

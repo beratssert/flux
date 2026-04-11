@@ -12,15 +12,24 @@ using CleanArchitecture.Core.Wrappers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace CleanArchitecture.WebApi.Controllers.v1
 {
+    /// <summary>
+    /// Projects and project assignments (manager-owned CRUD, role-scoped reads, admin manager reassignment).
+    /// </summary>
+    /// <remarks>
+    /// All project identifiers (<c>id</c>, <c>projectId</c>) are <strong>integers</strong>, not UUIDs.
+    /// </remarks>
     [ApiVersion("1.0")]
     [Authorize]
     [Route("api/v{version:apiVersion}/projects")]
     public class ProjectsController : BaseApiController
     {
+        /// <summary>Create a project (manager becomes owner; status Active).</summary>
+        /// <remarks>Policy: <c>Projects.Manage.Own</c> (Manager). Optional unique <c>code</c>.</remarks>
         [HttpPost]
         [Authorize(Policy = "Projects.Manage.Own")]
         [ProducesResponseType(typeof(ProjectViewModel), StatusCodes.Status201Created)]
@@ -34,6 +43,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return CreatedAtAction(nameof(GetById), new { id = vm.Id }, vm);
         }
 
+        /// <summary>List projects visible to the current role (employee: assigned; manager: managed; admin: all).</summary>
+        /// <remarks>Query: <c>page</c>/<c>pageNumber</c>, <c>pageSize</c>, <c>status</c>, <c>managerUserId</c>, <c>q</c>.</remarks>
         [HttpGet]
         [Authorize(Policy = "Projects.Read.Assigned")]
         [ProducesResponseType(typeof(PagedResponse<ProjectViewModel>), StatusCodes.Status200OK)]
@@ -51,6 +62,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             });
         }
 
+        /// <summary>Get one project if allowed by assignment or management scope.</summary>
+        /// <remarks>Unknown or forbidden ids return 404.</remarks>
         [HttpGet("{id:int}")]
         [Authorize(Policy = "Projects.Read.Assigned")]
         [ProducesResponseType(typeof(ProjectViewModel), StatusCodes.Status200OK)]
@@ -62,6 +75,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(await Mediator.Send(new GetProjectByIdQuery { Id = id }));
         }
 
+        /// <summary>Update name, code, description, start/end dates (manager of project only).</summary>
+        /// <remarks>Policy: <c>Projects.Manage.Own</c>. Admin cannot use this endpoint. Omit fields to leave unchanged; <c>code</c> must stay unique.</remarks>
         [HttpPatch("{id:int}")]
         [Authorize(Policy = "Projects.Manage.Own")]
         [ProducesResponseType(typeof(ProjectViewModel), StatusCodes.Status200OK)]
@@ -76,6 +91,7 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(await Mediator.Send(body));
         }
 
+        /// <summary>Set project lifecycle status: Active, Archived, or Closed.</summary>
         [HttpPatch("{id:int}/status")]
         [Authorize(Policy = "Projects.Manage.Own")]
         [ProducesResponseType(typeof(ProjectViewModel), StatusCodes.Status200OK)]
@@ -89,6 +105,7 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(await Mediator.Send(body));
         }
 
+        /// <summary>Reassign project manager (Admin only; new user must have Manager role).</summary>
         [HttpPatch("{id:int}/manager")]
         [Authorize(Policy = "Projects.Reassign.Manager")]
         [ProducesResponseType(typeof(ProjectViewModel), StatusCodes.Status200OK)]
@@ -102,6 +119,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(await Mediator.Send(body));
         }
 
+        /// <summary>Assign an employee to the project (active assignment).</summary>
+        /// <remarks>Policy: <c>Assignments.Manage.OwnProject</c>. Target user must have Employee role. 409 if already actively assigned.</remarks>
         [HttpPost("{projectId:int}/assignments")]
         [Authorize(Policy = "Assignments.Manage.OwnProject")]
         [ProducesResponseType(StatusCodes.Status201Created)]
@@ -117,9 +136,11 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return CreatedAtAction(nameof(GetAssignments), new { projectId }, null);
         }
 
+        /// <summary>List active assignments for a project.</summary>
+        /// <remarks>Roles: Manager (own project only) or Admin (any). Returns user ids and assignment metadata.</remarks>
         [HttpGet("{projectId:int}/assignments")]
         [Authorize(Roles = "Manager,Admin")]
-        [ProducesResponseType(typeof(System.Collections.Generic.List<ProjectAssignmentItemViewModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(List<ProjectAssignmentItemViewModel>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -129,6 +150,7 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(list);
         }
 
+        /// <summary>Remove assignment (soft: inactive + unassigned timestamp).</summary>
         [HttpDelete("{projectId:int}/assignments/{userId}")]
         [Authorize(Policy = "Assignments.Manage.OwnProject")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

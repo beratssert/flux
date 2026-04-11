@@ -11,9 +11,12 @@ using System.Threading.Tasks;
 
 namespace CleanArchitecture.Core.Features.Projects.Commands.UpdateProjectStatus
 {
+    /// <summary>Request body for <c>PATCH /projects/{id}/status</c>.</summary>
     public class UpdateProjectStatusCommand : IRequest<ProjectViewModel>
     {
+        /// <summary>Set from route.</summary>
         public int Id { get; set; }
+        /// <summary>Active, Archived, or Closed.</summary>
         public string Status { get; set; }
     }
 

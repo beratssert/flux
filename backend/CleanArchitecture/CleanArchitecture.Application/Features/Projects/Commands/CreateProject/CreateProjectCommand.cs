@@ -12,9 +12,12 @@ using System.Threading.Tasks;
 
 namespace CleanArchitecture.Core.Features.Projects.Commands.CreateProject
 {
+    /// <summary>Request body for <c>POST /projects</c>.</summary>
     public class CreateProjectCommand : IRequest<ProjectViewModel>
     {
+        /// <summary>Required. Project display name.</summary>
         public string Name { get; set; }
+        /// <summary>Optional unique code (e.g. MOB-2026).</summary>
         public string Code { get; set; }
         public string Description { get; set; }
         public DateTime? StartDate { get; set; }
