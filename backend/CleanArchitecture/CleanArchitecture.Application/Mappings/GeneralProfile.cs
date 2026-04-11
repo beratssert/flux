@@ -9,7 +9,7 @@ using CleanArchitecture.Core.Features.ExpenseCategories.Queries.GetAllExpenseCat
 using CleanArchitecture.Core.Features.Categories.Queries.GetAllCategories;
 using CleanArchitecture.Core.Features.Products.Commands.CreateProduct;
 using CleanArchitecture.Core.Features.Products.Queries.GetAllProducts;
-
+using CleanArchitecture.Core.Features.Projects;
 namespace CleanArchitecture.Core.Mappings
 {
     public class GeneralProfile : Profile
@@ -28,6 +28,7 @@ namespace CleanArchitecture.Core.Mappings
             CreateMap<ExpenseCategory, GetAllExpenseCategoriesViewModel>();
             CreateMap<TeamProjectSummaryDto, GetTeamProjectSummaryViewModel>();
             CreateMap<TeamPeriodSummaryDto, GetTeamPeriodSummaryViewModel>();
+            CreateMap<Project, ProjectViewModel>();
         }
     }
 }

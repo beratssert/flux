@@ -46,6 +46,24 @@ services:
     volumes:
       - cloudbeaver_data:/opt/cloudbeaver/workspace
 
+  # Run with: docker compose --profile test run --rm tests
+  # (starts sqlserver + webapi if needed, then unit + infrastructure + integration tests)
+  tests:
+    profiles:
+      - test
+    build:
+      context: .
+      dockerfile: Dockerfile.tests
+    container_name: flux-tests
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      webapi:
+        condition: service_started
+    environment:
+      INTEGRATION_API_BASE_URL: http://webapi:8080
+      INTEGRATION_SQL_CONNECTION: "Server=sqlserver,1433;Database=CleanArchitectureApplicationDb;User Id=sa;Password=Your_strong_password_123;TrustServerCertificate=True;Encrypt=False"
+
 volumes:
   sql_data:
   cloudbeaver_data:

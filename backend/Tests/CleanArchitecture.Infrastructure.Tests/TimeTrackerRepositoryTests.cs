@@ -106,6 +106,7 @@ namespace CleanArchitecture.Infrastructure.Tests
             {
                 UserId = userId,
                 ProjectId = projectId,
+                AssignedAtUtc = DateTime.UtcNow,
                 IsActive = true
             });
             await _context.SaveChangesAsync();
@@ -296,6 +297,7 @@ namespace CleanArchitecture.Infrastructure.Tests
             {
                 UserId = userId,
                 ProjectId = projectId,
+                AssignedAtUtc = DateTime.UtcNow.AddDays(-30),
                 IsActive = false,
                 UnassignedAtUtc = DateTime.UtcNow.AddDays(-1)
             });
@@ -330,6 +332,7 @@ namespace CleanArchitecture.Infrastructure.Tests
             {
                 UserId = employeeUserId,
                 ProjectId = projectId,
+                AssignedAtUtc = DateTime.UtcNow.AddDays(-20),
                 IsActive = false,
                 UnassignedAtUtc = DateTime.UtcNow.AddDays(-3)
             });

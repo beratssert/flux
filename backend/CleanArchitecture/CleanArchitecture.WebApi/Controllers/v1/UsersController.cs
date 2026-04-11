@@ -1,13 +1,17 @@
+using CleanArchitecture.Core.Features.Projects;
+using CleanArchitecture.Core.Features.Projects.Queries.GetMyProjectAssignments;
 using CleanArchitecture.Core.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using CleanArchitecture.Core.DTOs.Account;
 
 namespace CleanArchitecture.WebApi.Controllers.v1
 {
+    /// <summary>Current user profile and related resources.</summary>
     [ApiVersion("1.0")]
     [Authorize]
     [Route("api/v{version:apiVersion}/users")]
@@ -18,6 +22,17 @@ namespace CleanArchitecture.WebApi.Controllers.v1
         public UsersController(IAccountService accountService)
         {
             _accountService = accountService;
+        }
+
+        /// <summary>Active project assignments for the authenticated user.</summary>
+        /// <remarks>Policy: <c>Assignments.Read.Self</c>. <c>projectId</c> in each row is an integer.</remarks>
+        [HttpGet("me/assignments")]
+        [Authorize(Policy = "Assignments.Read.Self")]
+        [ProducesResponseType(typeof(List<MyProjectAssignmentViewModel>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GetMyProjectAssignments()
+        {
+            return Ok(await Mediator.Send(new GetMyProjectAssignmentsQuery()));
         }
 
         [HttpGet("me")]
