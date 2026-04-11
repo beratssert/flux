@@ -111,6 +111,78 @@ public class TimeTrackerIntegrationTests
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ExpenseCategories_Get_EmployeeAllowed_AdminWriteOnly()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+        var adminToken = await LoginAndGetTokenAsync(client, "admin@flux.local", "123Pa$$word!");
+
+        using var getReq = new HttpRequestMessage(HttpMethod.Get, "/api/v1/expense-categories");
+        getReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var getResp = await client.SendAsync(getReq);
+        Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
+
+        using var employeePostReq = new HttpRequestMessage(HttpMethod.Post, "/api/v1/expense-categories")
+        {
+            Content = JsonContent.Create(new { name = "EmployeeShouldNotCreate" })
+        };
+        employeePostReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var employeePostResp = await client.SendAsync(employeePostReq);
+        Assert.Equal(HttpStatusCode.Forbidden, employeePostResp.StatusCode);
+
+        using var adminPostReq = new HttpRequestMessage(HttpMethod.Post, "/api/v1/expense-categories")
+        {
+            Content = JsonContent.Create(new { name = $"AdminCanCreateCategory-{Guid.NewGuid():N}" })
+        };
+        adminPostReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var adminPostResp = await client.SendAsync(adminPostReq);
+        Assert.Equal(HttpStatusCode.Created, adminPostResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task ExpenseReports_MeAndTeamEndpoints_WorkWithAuthorization()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+        var managerToken = await LoginAndGetTokenAsync(client, "manager@flux.local", "123Pa$$word!");
+
+        using var meReq = new HttpRequestMessage(HttpMethod.Get, "/api/v1/reports/me/expense-summary?groupBy=project");
+        meReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var meResp = await client.SendAsync(meReq);
+        Assert.Equal(HttpStatusCode.OK, meResp.StatusCode);
+
+        using var teamReq = new HttpRequestMessage(HttpMethod.Get, "/api/v1/reports/manager/team-expense-summary?groupBy=user");
+        teamReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", managerToken);
+        var teamResp = await client.SendAsync(teamReq);
+        Assert.Equal(HttpStatusCode.OK, teamResp.StatusCode);
+
+        using var employeeTeamReq = new HttpRequestMessage(HttpMethod.Get, "/api/v1/reports/manager/team-expense-summary?groupBy=user");
+        employeeTeamReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var employeeTeamResp = await client.SendAsync(employeeTeamReq);
+        Assert.Equal(HttpStatusCode.Forbidden, employeeTeamResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task ProjectSummary_ManagerAllowed_EmployeeForbidden()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var managerToken = await LoginAndGetTokenAsync(client, "manager@flux.local", "123Pa$$word!");
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+        var employeeId = await GetCurrentUserIdAsync(client, employeeToken);
+        var projectId = await GetAssignedProjectIdAsync(employeeId);
+
+        using var managerReq = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/reports/projects/{projectId}/summary");
+        managerReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", managerToken);
+        var managerResp = await client.SendAsync(managerReq);
+        Assert.Equal(HttpStatusCode.OK, managerResp.StatusCode);
+
+        using var employeeReq = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/reports/projects/{projectId}/summary");
+        employeeReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var employeeResp = await client.SendAsync(employeeReq);
+        Assert.Equal(HttpStatusCode.Forbidden, employeeResp.StatusCode);
+    }
+
     private static async Task<string> LoginAndGetTokenAsync(HttpClient client, string email, string password)
     {
         var response = await client.PostAsJsonAsync("/api/v1/auth/login", new

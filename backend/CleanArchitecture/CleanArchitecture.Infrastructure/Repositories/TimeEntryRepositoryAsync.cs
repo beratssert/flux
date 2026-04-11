@@ -292,6 +292,62 @@ namespace CleanArchitecture.Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(int TotalMinutes, int TotalEntries, int BillableEntries)> GetProjectAggregateByManagedProjectsAsync(
+            string managerUserId,
+            int projectId)
+        {
+            var managedProjectIds = _projects
+                .Where(p => p.ManagerUserId == managerUserId)
+                .Select(p => p.Id);
+
+            var query = _timeEntries.Where(te =>
+                te.DeletedAtUtc == null &&
+                te.ProjectId == projectId &&
+                managedProjectIds.Contains(te.ProjectId));
+
+            var result = await query
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    TotalMinutes = g.Sum(x => x.DurationMinutes),
+                    TotalEntries = g.Count(),
+                    BillableEntries = g.Count(x => x.IsBillable)
+                })
+                .FirstOrDefaultAsync();
+
+            return result == null
+                ? (0, 0, 0)
+                : (result.TotalMinutes, result.TotalEntries, result.BillableEntries);
+        }
+
+        public async Task<(int TotalMinutes, int TotalEntries, int BillableEntries)> GetProjectAggregateAllAsync(int projectId)
+        {
+            var query = _timeEntries.Where(te => te.DeletedAtUtc == null && te.ProjectId == projectId);
+            var result = await query
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    TotalMinutes = g.Sum(x => x.DurationMinutes),
+                    TotalEntries = g.Count(),
+                    BillableEntries = g.Count(x => x.IsBillable)
+                })
+                .FirstOrDefaultAsync();
+
+            return result == null
+                ? (0, 0, 0)
+                : (result.TotalMinutes, result.TotalEntries, result.BillableEntries);
+        }
+
+        public Task<bool> IsProjectManagedByAsync(string managerUserId, int projectId)
+        {
+            return _projects.AnyAsync(p => p.Id == projectId && p.ManagerUserId == managerUserId);
+        }
+
+        public Task<bool> ProjectExistsAsync(int projectId)
+        {
+            return _projects.AnyAsync(p => p.Id == projectId);
+        }
+
         private IQueryable<TimeEntry> BuildManagedProjectsQuery(
             string managerUserId,
             int? projectId,
