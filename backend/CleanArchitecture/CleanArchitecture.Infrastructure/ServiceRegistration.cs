@@ -150,6 +150,7 @@ namespace CleanArchitecture.Infrastructure
             services.AddTransient<IRunningTimerRepositoryAsync, RunningTimerRepositoryAsync>();
             services.AddTransient<IProjectAssignmentRepositoryAsync, ProjectAssignmentRepositoryAsync>();
             services.AddTransient<IProjectRepositoryAsync, ProjectRepositoryAsync>();
+            services.AddTransient<ICalendarEventRepositoryAsync, CalendarEventRepositoryAsync>();
             #endregion
         }
     }

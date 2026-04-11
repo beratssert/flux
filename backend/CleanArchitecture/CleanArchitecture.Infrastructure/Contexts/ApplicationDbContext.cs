@@ -31,6 +31,8 @@ namespace CleanArchitecture.Infrastructure.Contexts
         public DbSet<ExpenseCategory> ExpenseCategories { get; set; }
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<CalendarEvent> CalendarEvents { get; set; }
+        public DbSet<CalendarEventParticipant> CalendarEventParticipants { get; set; }
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
         {
@@ -177,6 +179,39 @@ namespace CleanArchitecture.Infrastructure.Contexts
             {
                 entity.Property(ec => ec.Name).IsRequired().HasMaxLength(150);
                 entity.HasIndex(ec => ec.Name).IsUnique();
+            });
+
+            builder.Entity<CalendarEvent>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(4000);
+                entity.Property(e => e.CreatedByUserId).IsRequired().HasMaxLength(450);
+                entity.Property(e => e.VisibilityType).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.StartAtUtc).IsRequired();
+                entity.Property(e => e.EndAtUtc).IsRequired();
+                entity.Property(e => e.CreatedAtUtc).IsRequired();
+                entity.HasOne<Project>()
+                    .WithMany()
+                    .HasForeignKey(e => e.ProjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(e => e.ProjectId);
+                entity.HasIndex(e => new { e.StartAtUtc, e.EndAtUtc });
+            });
+
+            builder.Entity<CalendarEventParticipant>(entity =>
+            {
+                entity.HasKey(p => new { p.EventId, p.UserId });
+                entity.Property(p => p.UserId).HasMaxLength(450);
+                entity.Property(p => p.ParticipationType).HasMaxLength(20);
+                entity.HasOne(p => p.Event)
+                    .WithMany(e => e.Participants)
+                    .HasForeignKey(p => p.EventId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne<ApplicationUser>()
+                    .WithMany()
+                    .HasForeignKey(p => p.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             builder.Entity<Expense>(entity =>

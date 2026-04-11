@@ -987,17 +987,19 @@ Yeni takvim etkinliği oluşturur.
 
 **Yetki:** Manager (`managed-projects`)
 
+**Not:** `projectId`, `Projects` tablosundaki tamsayı birincil anahtar ile aynıdır (UUID değildir); `Personal` görünürlükte `projectId` null olmalıdır.
+
 **Request**
 ~~~json
 {
-  "projectId": "uuid",
+  "projectId": 12,
   "title": "Sprint Planlama",
   "description": "Haftalık planlama",
   "startAtUtc": "2026-03-18T09:00:00Z",
   "endAtUtc": "2026-03-18T10:00:00Z",
   "visibilityType": "Project",
   "isAllDay": false,
-  "participantUserIds": ["uuid", "uuid"]
+  "participantUserIds": ["user-guid-string", "user-guid-string"]
 }
 ~~~
 

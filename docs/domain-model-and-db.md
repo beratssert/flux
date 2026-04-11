@@ -277,7 +277,7 @@ Takvim etkinliklerini tutar.
 
 ### Alanlar
 - `Id` (UUID, PK)
-- `ProjectId` (UUID, FK -> Project, nullable)
+- `ProjectId` (FK -> Project, nullable; veritabanında `Project.Id` ile uyumlu tamsayı — HTTP API’de de int `projectId`)
 - `Title` (string, max 200, not null)
 - `Description` (string, nullable)
 - `StartAtUtc` (datetime utc, not null)
