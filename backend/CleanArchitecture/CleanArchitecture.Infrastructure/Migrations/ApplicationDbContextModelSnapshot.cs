@@ -210,6 +210,17 @@ namespace CleanArchitecture.Infrastructure.Migrations
                     b.Property<string>("LastModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Code")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("ManagerUserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -219,12 +230,19 @@ namespace CleanArchitecture.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[Code] IS NOT NULL");
 
                     b.ToTable("Projects");
                 });
@@ -242,6 +260,12 @@ namespace CleanArchitecture.Infrastructure.Migrations
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedByUserId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -264,9 +288,15 @@ namespace CleanArchitecture.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AssignedByUserId");
+
                     b.HasIndex("UserId");
 
                     b.HasIndex("ProjectId", "UserId", "IsActive");
+
+                    b.HasIndex("ProjectId", "UserId")
+                        .IsUnique()
+                        .HasFilter("[IsActive] = 1");
 
                     b.ToTable("ProjectAssignments");
                 });
@@ -601,6 +631,11 @@ namespace CleanArchitecture.Infrastructure.Migrations
 
             modelBuilder.Entity("CleanArchitecture.Core.Entities.ProjectAssignment", b =>
                 {
+                    b.HasOne("CleanArchitecture.Infrastructure.Models.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AssignedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("CleanArchitecture.Core.Entities.Project", null)
                         .WithMany()
                         .HasForeignKey("ProjectId")

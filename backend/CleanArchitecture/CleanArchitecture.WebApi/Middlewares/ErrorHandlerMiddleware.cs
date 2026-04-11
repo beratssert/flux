@@ -41,6 +41,14 @@ namespace CleanArchitecture.WebApi.Middlewares
                         problemDetails = CreateProblemDetails(response.StatusCode, "Validation Error", "Some validation errors occurred.", context);
                         problemDetails.Extensions["errors"] = e.Errors;
                         break;
+                    case ConflictException e:
+                        response.StatusCode = (int)HttpStatusCode.Conflict;
+                        problemDetails = CreateProblemDetails(response.StatusCode, "Conflict", e.Message, context);
+                        break;
+                    case NotFoundException e:
+                        response.StatusCode = (int)HttpStatusCode.NotFound;
+                        problemDetails = CreateProblemDetails(response.StatusCode, "Not Found", e.Message, context);
+                        break;
                     case KeyNotFoundException e:
                         response.StatusCode = (int)HttpStatusCode.NotFound;
                         problemDetails = CreateProblemDetails(response.StatusCode, "Not Found", e.Message, context);
