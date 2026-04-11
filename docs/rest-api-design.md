@@ -104,11 +104,9 @@ OpenAPI / istemci tarafında proje ile ilgili alanlar **`integer` (int32)** olar
 - `Expenses.Read.Team`
 - `Expenses.Reject.Team`
 - `Reports.Read.Self`
-- `Reports.Read.Team`
-- `Reports.Read.All`
+- `Reports.Read.Team` (Manager: yönetilen projeler; Admin: aynı team uçları üzerinden tüm organizasyon)
 - `Reports.Export.Self`
-- `Reports.Export.Team`
-- `Reports.Export.All`
+- `Reports.Export.Team` (Admin için dışa aktarma da bu policy ile)
 - `Calendar.Read.Self`
 - `Calendar.Manage.OwnProject`
 - `Audit.Read.All`
@@ -1196,6 +1194,9 @@ Belirli bir proje için özet rapor döner.
 - Manager (`managed-projects`)
 - Admin (`all`)
 
+**Filtreler (opsiyonel)**
+- `from`, `to` — kapsayıcı tarih (date-only); zaman girişleri `EntryDate`, giderler `ExpenseDate` üzerinden filtrelenir. Verilmezse tüm geçmiş.
+
 **İçerik**
 - toplam süre
 - toplam gider
@@ -1203,6 +1204,27 @@ Belirli bir proje için özet rapor döner.
 
 **Status Codes**
 - `200 OK`
+- `400 Bad Request` (`to` &lt; `from`)
+- `403 Forbidden`
+- `404 Not Found`
+
+**Not:** Bilinmeyen `projectId` veya manager için yönetilmeyen proje, projeler API’sindeki gibi **404** ile maskelenir (erişim reddi ayrıca `403` olarak raporlanmaz).
+
+### `GET /api/v1/reports/projects/{projectId}/summary/export`
+Proje özetini CSV olarak indirir.
+
+**Yetki:** Manager / Admin — policy `Reports.Export.Team` (JSON özeti ile aynı erişim modeli).
+
+**Query**
+- `format=csv`
+- `from`, `to` (opsiyonel; JSON endpoint ile aynı anlam)
+
+**Response**
+- `text/csv` (tek satır özet: `projectId`, `totalMinutes`, `totalExpenseAmount`, `billableEntryRate`, `from`, `to`)
+
+**Status Codes**
+- `200 OK`
+- `400 Bad Request`
 - `403 Forbidden`
 - `404 Not Found`
 

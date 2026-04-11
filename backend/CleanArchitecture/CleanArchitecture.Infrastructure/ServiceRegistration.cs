@@ -121,11 +121,9 @@ namespace CleanArchitecture.Infrastructure
 
                 options.AddPolicy("Reports.Read.Self", policy => policy.RequireRole(Roles.Employee.ToString(), Roles.Manager.ToString(), Roles.Admin.ToString()));
                 options.AddPolicy("Reports.Read.Team", policy => policy.RequireRole(Roles.Manager.ToString(), Roles.Admin.ToString()));
-                options.AddPolicy("Reports.Read.All", policy => policy.RequireRole(Roles.Admin.ToString()));
 
                 options.AddPolicy("Reports.Export.Self", policy => policy.RequireRole(Roles.Employee.ToString(), Roles.Manager.ToString(), Roles.Admin.ToString()));
                 options.AddPolicy("Reports.Export.Team", policy => policy.RequireRole(Roles.Manager.ToString(), Roles.Admin.ToString()));
-                options.AddPolicy("Reports.Export.All", policy => policy.RequireRole(Roles.Admin.ToString()));
 
                 options.AddPolicy("Calendar.Read.Self", policy => policy.RequireRole(Roles.Employee.ToString(), Roles.Manager.ToString(), Roles.Admin.ToString()));
                 options.AddPolicy("Calendar.Manage.OwnProject", policy => policy.RequireRole(Roles.Manager.ToString()));
