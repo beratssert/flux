@@ -21,7 +21,7 @@ class MainLayout extends ConsumerWidget {
     final sidebar = _Sidebar(
       profile: profile,
       logoutBusy: false,
-      onSettings: () {},
+      onSettings: () => context.go('/settings'),
       onLogout: () =>
           ref.read(authSessionControllerProvider.notifier).signOut(),
     );

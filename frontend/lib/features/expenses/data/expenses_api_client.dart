@@ -213,4 +213,26 @@ class ExpensesApiClient {
       throw _handleError(e);
     }
   }
+  Future<int> createCategory(String name) async {
+    try {
+      final response = await _dio.post('/api/v1/expense-categories',
+          data: {'name': name}, options: _authorizedOptions());
+      return response.data as int;
+    } on DioException catch (e) {
+      _logger.warning('createCategory failed', e);
+      throw _handleError(e);
+    }
+  }
+
+  Future<int> updateCategory(int id, String name, bool isActive) async {
+    try {
+      final response = await _dio.patch('/api/v1/expense-categories/$id',
+          data: {'id': id, 'name': name, 'isActive': isActive},
+          options: _authorizedOptions());
+      return response.data as int;
+    } on DioException catch (e) {
+      _logger.warning('updateCategory failed', e);
+      throw _handleError(e);
+    }
+  }
 }

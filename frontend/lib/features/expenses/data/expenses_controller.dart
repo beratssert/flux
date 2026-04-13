@@ -121,6 +121,12 @@ class ExpensesController extends StateNotifier<ExpensesState> {
     await fetchExpenses();
   }
 
+  /// Returns a fresh [ExpenseRecord] directly from the API.
+  /// Use this before opening the edit dialog to avoid stale-snapshot overwrites.
+  Future<ExpenseRecord> fetchExpenseById(int id) {
+    return _client.getExpense(id);
+  }
+
   Future<void> submitExpense(int id) async {
     await _client.submitExpense(id);
     await fetchExpenses();

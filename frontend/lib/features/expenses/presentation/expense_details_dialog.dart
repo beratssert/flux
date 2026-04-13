@@ -46,18 +46,19 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
       .submitExpense(widget.expense.id));
 
   void _delete() {
+    final outerContext = context; // Capture before entering nested builder
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: outerContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Confirm Delete'),
         content: const Text('Are you sure you want to delete this expense?'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel')),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               _runAction(() => ref
                   .read(expensesControllerProvider.notifier)
                   .deleteExpense(widget.expense.id));
@@ -69,28 +70,45 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
     );
   }
 
-  void _edit() {
-    // Need projects and categories for the edit dialog — fetch from controller
-    final projectsAsync = ref.read(projectNamesProvider);
-    final categoriesAsync = ref.read(expenseCategoriesProvider);
-    final projects = projectsAsync.valueOrNull ?? {};
-    final categories = categoriesAsync.valueOrNull ?? [];
+  void _edit() async {
+    // Fetch a fresh snapshot to avoid stale-data overwrites
+    setState(() => _isWorking = true);
+    try {
+      final freshExpense = await ref
+          .read(expensesControllerProvider.notifier)
+          .fetchExpenseById(widget.expense.id);
 
-    showDialog(
-      context: context,
-      builder: (context) => EditExpenseDialog(
-        expense: widget.expense,
-        projects: projects,
-        categories: categories,
-      ),
-    );
+      if (!mounted) return;
+      setState(() => _isWorking = false);
+
+      final projectsAsync = ref.read(projectNamesProvider);
+      final categoriesAsync = ref.read(expenseCategoriesProvider);
+      final projects = projectsAsync.valueOrNull ?? {};
+      final categories = categoriesAsync.valueOrNull ?? [];
+
+      showDialog(
+        context: context,
+        builder: (context) => EditExpenseDialog(
+          expense: freshExpense,
+          projects: projects,
+          categories: categories,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isWorking = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to load expense: $e')));
+      }
+    }
   }
 
   void _reject() {
     final reasonController = TextEditingController();
+    final outerContext = context; // Capture before entering nested builder
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: outerContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Reject Expense'),
         content: TextField(
           controller: reasonController,
@@ -100,13 +118,13 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () {
               final reason = reasonController.text.trim();
               if (reason.isEmpty) return;
-              Navigator.of(context).pop();
+              Navigator.of(dialogContext).pop();
               _runAction(() => ref
                   .read(expensesControllerProvider.notifier)
                   .rejectExpense(widget.expense.id, reason));

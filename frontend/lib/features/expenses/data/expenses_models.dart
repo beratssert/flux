@@ -101,7 +101,7 @@ class ExpenseRecord {
       status: _parseStatus(_readString(json, const ['status', 'Status'])),
       rejectionReason:
           _readString(json, const ['rejectionReason', 'RejectionReason']),
-      reviewedBy: _readString(json, const ['reviewedBy', 'ReviewedBy']),
+      reviewedBy: _readString(json, const ['reviewedByUserId', 'ReviewedByUserId', 'reviewedBy', 'ReviewedBy']),
     );
   }
 }

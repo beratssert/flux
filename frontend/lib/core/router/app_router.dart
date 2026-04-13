@@ -10,6 +10,8 @@ import '../../features/expenses/presentation/expenses_page.dart';
 import '../../features/projects/presentation/projects_page.dart';
 import '../presentation/main_layout.dart';
 import '../presentation/launch_screen.dart';
+import '../../features/expenses/presentation/settings_page.dart';
+import '../../features/expenses/presentation/expense_categories_page.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -64,6 +66,16 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => ProjectsWorkspacePage(
               session: authState.session!,
             ),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsPage(),
+            routes: [
+              GoRoute(
+                path: 'expense-categories',
+                builder: (context, state) => const ExpenseCategoriesPage(),
+              ),
+            ],
           ),
         ],
       ),
