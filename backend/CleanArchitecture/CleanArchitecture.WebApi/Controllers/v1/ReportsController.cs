@@ -14,17 +14,19 @@ using System.Threading.Tasks;
 
 namespace CleanArchitecture.WebApi.Controllers.v1
 {
+    /// <summary>Read-only analytics from time entries and expenses (no report table). Historical rows are not tied to active project assignment.</summary>
+    /// <remarks>Self endpoints: policy <c>Reports.Read.Self</c> / <c>Reports.Export.Self</c>. Team endpoints: <c>Reports.Read.Team</c> / <c>Reports.Export.Team</c> (Manager scoped; Admin uses the same team routes for org-wide filters).</remarks>
     [ApiVersion("1.0")]
     [Authorize]
     [Route("api/v{version:apiVersion}/reports")]
     public class ReportsController : BaseApiController
     {
-        /// <summary>
-        /// Returns time summary for the authenticated user.
-        /// </summary>
+        /// <summary>Current user&apos;s time totals grouped by day, week, month, or project.</summary>
+        /// <remarks>Policy: <c>Reports.Read.Self</c>. Query <c>groupBy</c>: <c>day</c> (default), <c>week</c>, <c>month</c>, <c>project</c>. Invalid <c>groupBy</c> returns 400.</remarks>
         [HttpGet("me/time-summary")]
         [Authorize(Policy = "Reports.Read.Self")]
         [ProducesResponseType(typeof(TimeSummaryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<TimeSummaryResponse>> GetMyTimeSummary([FromQuery] DateTime? from, [FromQuery] DateTime? to, [FromQuery] string groupBy)
@@ -39,12 +41,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
-        /// <summary>
-        /// Returns team time summary for manager/admin scope.
-        /// </summary>
+        /// <summary>Team time summary: Manager sees managed projects only; Admin sees all (optional <c>projectId</c> / <c>userId</c> filters).</summary>
+        /// <remarks>Policy: <c>Reports.Read.Team</c>. <c>groupBy</c>: <c>user</c> (default), <c>project</c>, <c>week</c>.</remarks>
         [HttpGet("manager/team-time-summary")]
         [Authorize(Policy = "Reports.Read.Team")]
         [ProducesResponseType(typeof(TimeSummaryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<TimeSummaryResponse>> GetManagerTeamTimeSummary(
@@ -66,12 +68,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
-        /// <summary>
-        /// Returns expense summary for the authenticated user.
-        /// </summary>
+        /// <summary>Current user&apos;s expense totals grouped by category, project, or month.</summary>
+        /// <remarks>Policy: <c>Reports.Read.Self</c>. <c>groupBy</c>: <c>category</c> (default), <c>project</c>, <c>month</c>. Optional <c>currencyCode</c> filter.</remarks>
         [HttpGet("me/expense-summary")]
         [Authorize(Policy = "Reports.Read.Self")]
         [ProducesResponseType(typeof(ExpenseSummaryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ExpenseSummaryResponse>> GetMyExpenseSummary(
@@ -91,12 +93,12 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
-        /// <summary>
-        /// Returns team expense summary for manager/admin scope.
-        /// </summary>
+        /// <summary>Team expense summary with optional <c>projectId</c>, <c>userId</c>, <c>categoryId</c>, and currency filter.</summary>
+        /// <remarks>Policy: <c>Reports.Read.Team</c>. <c>groupBy</c>: <c>user</c> (default), <c>project</c>, <c>month</c>.</remarks>
         [HttpGet("manager/team-expense-summary")]
         [Authorize(Policy = "Reports.Read.Team")]
         [ProducesResponseType(typeof(ExpenseSummaryResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ExpenseSummaryResponse>> GetManagerTeamExpenseSummary(
@@ -122,31 +124,62 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return Ok(result);
         }
 
-        /// <summary>
-        /// Returns project-level aggregate summary.
-        /// </summary>
-        /// <remarks>
-        /// Includes total time, total expenses, and billable entry rate for the given project.
-        /// </remarks>
+        /// <summary>Aggregate for one project: total minutes, total expense amount, billable time-entry rate (%).</summary>
+        /// <remarks>Policy: <c>Reports.Read.Team</c>. Optional <c>from</c>/<c>to</c> filter by time entry date and expense date (inclusive, date-only). Manager: project must be managed by caller. Unknown id or inaccessible project: <c>404</c>.</remarks>
         [HttpGet("projects/{projectId:int}/summary")]
         [Authorize(Policy = "Reports.Read.Team")]
         [ProducesResponseType(typeof(ProjectSummaryResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ProjectSummaryResponse>> GetProjectSummary(int projectId)
+        public async Task<ActionResult<ProjectSummaryResponse>> GetProjectSummary(
+            int projectId,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to)
         {
             var result = await Mediator.Send(new GetProjectSummaryQuery
             {
-                ProjectId = projectId
+                ProjectId = projectId,
+                From = from,
+                To = to
             });
 
             return Ok(result);
         }
 
-        /// <summary>
-        /// Exports authenticated user's time summary as CSV.
-        /// </summary>
+        /// <summary>Download project aggregate summary as CSV (<c>format=csv</c>). Optional <c>from</c>/<c>to</c> match the JSON endpoint.</summary>
+        /// <remarks>Policy: <c>Reports.Export.Team</c>.</remarks>
+        [HttpGet("projects/{projectId:int}/summary/export")]
+        [Authorize(Policy = "Reports.Export.Team")]
+        [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ExportProjectSummary(
+            int projectId,
+            [FromQuery] string format,
+            [FromQuery] DateTime? from,
+            [FromQuery] DateTime? to)
+        {
+            if (!string.Equals(format, "csv", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only format=csv is supported.");
+            }
+
+            var summary = await Mediator.Send(new GetProjectSummaryQuery
+            {
+                ProjectId = projectId,
+                From = from,
+                To = to
+            });
+
+            return BuildProjectSummaryCsv(summary, from, to);
+        }
+
+        /// <summary>Download current user time summary as CSV (<c>format=csv</c> required).</summary>
+        /// <remarks>Policy: <c>Reports.Export.Self</c>. Same <c>from</c>, <c>to</c>, <c>groupBy</c> as JSON endpoint.</remarks>
         [HttpGet("me/time-summary/export")]
         [Authorize(Policy = "Reports.Export.Self")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -174,9 +207,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return BuildCsvFile(summary, "my-time-summary");
         }
 
-        /// <summary>
-        /// Exports manager/admin team time summary as CSV.
-        /// </summary>
+        /// <summary>Download team time summary as CSV.</summary>
+        /// <remarks>Policy: <c>Reports.Export.Team</c>. Query mirrors <c>GET .../manager/team-time-summary</c>.</remarks>
         [HttpGet("manager/team-time-summary/export")]
         [Authorize(Policy = "Reports.Export.Team")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -208,9 +240,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return BuildCsvFile(summary, "team-time-summary");
         }
 
-        /// <summary>
-        /// Exports authenticated user's expense summary as CSV.
-        /// </summary>
+        /// <summary>Download current user expense summary as CSV.</summary>
+        /// <remarks>Policy: <c>Reports.Export.Self</c>. Optional <c>currencyCode</c>.</remarks>
         [HttpGet("me/expense-summary/export")]
         [Authorize(Policy = "Reports.Export.Self")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -240,9 +271,8 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             return BuildExpenseCsvFile(summary, "my-expense-summary");
         }
 
-        /// <summary>
-        /// Exports manager/admin team expense summary as CSV.
-        /// </summary>
+        /// <summary>Download team expense summary as CSV.</summary>
+        /// <remarks>Policy: <c>Reports.Export.Team</c>. Query mirrors <c>GET .../manager/team-expense-summary</c>.</remarks>
         [HttpGet("manager/team-expense-summary/export")]
         [Authorize(Policy = "Reports.Export.Team")]
         [ProducesResponseType(typeof(FileContentResult), StatusCodes.Status200OK)]
@@ -308,6 +338,28 @@ namespace CleanArchitecture.WebApi.Controllers.v1
             }
 
             var fileName = $"{prefix}-{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
+            return new FileContentResult(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv")
+            {
+                FileDownloadName = fileName
+            };
+        }
+
+        private static FileContentResult BuildProjectSummaryCsv(
+            ProjectSummaryResponse summary,
+            DateTime? from,
+            DateTime? to)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("projectId,totalMinutes,totalExpenseAmount,billableEntryRate,from,to");
+            sb.Append(summary.ProjectId).Append(',')
+                .Append(summary.TotalMinutes).Append(',')
+                .Append(summary.TotalExpenseAmount).Append(',')
+                .Append(summary.BillableEntryRate).Append(',')
+                .Append(from.HasValue ? from.Value.ToString("yyyy-MM-dd") : string.Empty).Append(',')
+                .Append(to.HasValue ? to.Value.ToString("yyyy-MM-dd") : string.Empty)
+                .AppendLine();
+
+            var fileName = $"project-summary-{summary.ProjectId}-{DateTime.UtcNow:yyyyMMddHHmmss}.csv";
             return new FileContentResult(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv")
             {
                 FileDownloadName = fileName

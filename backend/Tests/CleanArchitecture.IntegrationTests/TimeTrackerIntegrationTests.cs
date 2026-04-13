@@ -213,6 +213,81 @@ public class TimeTrackerIntegrationTests
         Assert.Equal(HttpStatusCode.Forbidden, employeeResp.StatusCode);
     }
 
+    [Fact]
+    public async Task ProjectSummary_ExportCsv_Manager_ReturnsOk()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var managerToken = await LoginAndGetTokenAsync(client, "manager@flux.local", "123Pa$$word!");
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+        var employeeId = await GetCurrentUserIdAsync(client, employeeToken);
+        var projectId = await GetAssignedProjectIdAsync(employeeId);
+
+        using var req = new HttpRequestMessage(
+            HttpMethod.Get,
+            $"/api/v1/reports/projects/{projectId}/summary/export?format=csv");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", managerToken);
+        var resp = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("text/csv", resp.Content.Headers.ContentType?.MediaType);
+        var body = await resp.Content.ReadAsStringAsync();
+        Assert.Contains("projectId,totalMinutes", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ProjectSummary_UnknownProjectId_Admin_ReturnsNotFound()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var adminToken = await LoginAndGetTokenAsync(client, "admin@flux.local", "123Pa$$word!");
+
+        using var req = new HttpRequestMessage(HttpMethod.Get, "/api/v1/reports/projects/2147483647/summary");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
+        var resp = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reports_ExportMyTimeSummary_Csv_ReturnsOkAndContentType()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var token = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+
+        using var req = new HttpRequestMessage(
+            HttpMethod.Get,
+            "/api/v1/reports/me/time-summary/export?format=csv&groupBy=day");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var resp = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        Assert.Equal("text/csv", resp.Content.Headers.ContentType?.MediaType);
+        var body = await resp.Content.ReadAsStringAsync();
+        Assert.Contains("key,minutes", body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Reports_ExportMyTimeSummary_InvalidFormat_ReturnsBadRequest()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var token = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+
+        using var req = new HttpRequestMessage(
+            HttpMethod.Get,
+            "/api/v1/reports/me/time-summary/export?format=xlsx&groupBy=day");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var resp = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reports_MyTimeSummary_InvalidGroupBy_ReturnsBadRequest()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var token = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+
+        using var req = new HttpRequestMessage(HttpMethod.Get, "/api/v1/reports/me/time-summary?groupBy=invalid");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var resp = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
     private static async Task<string> LoginAndGetTokenAsync(HttpClient client, string email, string password)
     {
         var response = await client.PostAsJsonAsync("/api/v1/auth/login", new

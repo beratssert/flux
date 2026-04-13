@@ -294,7 +294,9 @@ namespace CleanArchitecture.Infrastructure.Repositories
 
         public async Task<(int TotalMinutes, int TotalEntries, int BillableEntries)> GetProjectAggregateByManagedProjectsAsync(
             string managerUserId,
-            int projectId)
+            int projectId,
+            DateTime? from = null,
+            DateTime? to = null)
         {
             var managedProjectIds = _projects
                 .Where(p => p.ManagerUserId == managerUserId)
@@ -304,6 +306,16 @@ namespace CleanArchitecture.Infrastructure.Repositories
                 te.DeletedAtUtc == null &&
                 te.ProjectId == projectId &&
                 managedProjectIds.Contains(te.ProjectId));
+
+            if (from.HasValue)
+            {
+                query = query.Where(te => te.EntryDate >= from.Value.Date);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(te => te.EntryDate <= to.Value.Date);
+            }
 
             var result = await query
                 .GroupBy(_ => 1)
@@ -320,9 +332,23 @@ namespace CleanArchitecture.Infrastructure.Repositories
                 : (result.TotalMinutes, result.TotalEntries, result.BillableEntries);
         }
 
-        public async Task<(int TotalMinutes, int TotalEntries, int BillableEntries)> GetProjectAggregateAllAsync(int projectId)
+        public async Task<(int TotalMinutes, int TotalEntries, int BillableEntries)> GetProjectAggregateAllAsync(
+            int projectId,
+            DateTime? from = null,
+            DateTime? to = null)
         {
             var query = _timeEntries.Where(te => te.DeletedAtUtc == null && te.ProjectId == projectId);
+
+            if (from.HasValue)
+            {
+                query = query.Where(te => te.EntryDate >= from.Value.Date);
+            }
+
+            if (to.HasValue)
+            {
+                query = query.Where(te => te.EntryDate <= to.Value.Date);
+            }
+
             var result = await query
                 .GroupBy(_ => 1)
                 .Select(g => new

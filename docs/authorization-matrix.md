@@ -100,7 +100,7 @@
 - Reports ayrı bir tablo olmak zorunda değildir; time entries ve expenses üzerinden dinamik üretilebilir.
 - Employee yalnızca kendi özetlerini görebilir.
 - Manager yalnızca yönettiği projelere ait çalışan ve proje bazlı raporları görebilir.
-- Admin tüm raporları görüntüleyebilir.
+- Admin tüm raporları görüntüleyebilir; backend’de ayrı `Reports.Read.All` / `Reports.Export.All` policy’leri yoktur — Admin, `Reports.Read.Team` / `Reports.Export.Team` ile tanımlı manager team uçlarını (filtrelerle) kullanır.
 - Historical reports, yalnızca aktif assignment’a bağlı olmamalıdır; geçmiş time/expense kayıtları assignment sonlansa da raporlarda görünmeye devam etmelidir.
 - Export işlemleri, ilgili report erişim yetkisini miras alır.
 

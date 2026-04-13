@@ -56,6 +56,55 @@ class MyApp extends ConsumerWidget {
           ),
         ),
       ),
+      home: const AppRoot(),
+    );
+  }
+}
+
+class AppRoot extends ConsumerWidget {
+  const AppRoot({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authSessionControllerProvider);
+
+    switch (authState.status) {
+      case AuthStatus.checking:
+        return const _LaunchScreen();
+      case AuthStatus.authenticated:
+        return const TimeTrackerPage();
+      case AuthStatus.unauthenticated:
+        return const LoginPage();
+    }
+  }
+}
+
+class _LaunchScreen extends StatelessWidget {
+  const _LaunchScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFF0D5EF8),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+            SizedBox(height: 18),
+            Text(
+              'Flux is preparing your workspace...',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
