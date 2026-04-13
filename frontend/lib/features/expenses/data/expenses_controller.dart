@@ -39,13 +39,18 @@ class ExpensesState {
 
 class ExpensesController extends StateNotifier<ExpensesState> {
   final ExpensesApiClient _client;
+  int? currentProjectId;
 
   ExpensesController(this._client) : super(const ExpensesState());
 
   Future<void> fetchExpenses() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final page = await _client.getExpenses(pageNumber: 1, pageSize: 100);
+      final page = await _client.getExpenses(
+        pageNumber: 1, 
+        pageSize: 100,
+        projectId: currentProjectId,
+      );
       state = state.copyWith(
         isLoading: false,
         items: page.items,
@@ -54,6 +59,11 @@ class ExpensesController extends StateNotifier<ExpensesState> {
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  Future<void> setProjectFilter(int? projectId) async {
+    currentProjectId = projectId;
+    await fetchExpenses();
   }
 
   Future<void> createExpense({

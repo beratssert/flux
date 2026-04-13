@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers/project_provider.dart';
 import '../../auth/data/auth_session_controller.dart';
 import '../data/expenses_controller.dart';
 import '../data/expenses_models.dart';
+import 'edit_expense_dialog.dart';
 
 class ExpenseDetailsDialog extends ConsumerStatefulWidget {
   final ExpenseRecord expense;
@@ -67,6 +69,23 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
     );
   }
 
+  void _edit() {
+    // Need projects and categories for the edit dialog — fetch from controller
+    final projectsAsync = ref.read(projectNamesProvider);
+    final categoriesAsync = ref.read(expenseCategoriesProvider);
+    final projects = projectsAsync.valueOrNull ?? {};
+    final categories = categoriesAsync.valueOrNull ?? [];
+
+    showDialog(
+      context: context,
+      builder: (context) => EditExpenseDialog(
+        expense: widget.expense,
+        projects: projects,
+        categories: categories,
+      ),
+    );
+  }
+
   void _reject() {
     final reasonController = TextEditingController();
     showDialog(
@@ -115,20 +134,22 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
 
     final authState = ref.watch(authSessionControllerProvider);
     final userRole = authState.session?.profile.role ?? 'Employee';
-    final isManager = userRole == 'Manager' || userRole == 'Admin';
+    final isManager = userRole == 'Manager';
+    final isAdmin = userRole == 'Admin';
 
-    // MVP roles rules:
-    // Owner can submit draft or rejected
-    // Owner can delete draft
+    // Backend policy matrix:
+    // Expenses.Manage.Self → Employee + Manager (NOT Admin)
+    // Expenses.Reject.Team → Manager only
     final isDraftOrRejected = widget.expense.status == ExpenseStatus.draft ||
         widget.expense.status == ExpenseStatus.rejected;
     final isDraft = widget.expense.status == ExpenseStatus.draft;
-    final canSubmit = !isManager && isDraftOrRejected;
-    final canDelete = !isManager && isDraft;
+    final canSubmit = !isAdmin && isDraftOrRejected;
+    final canDelete = !isAdmin && isDraft;
 
-    // Manager can reject submitted
+    // Only Manager can reject submitted
     final isSubmitted = widget.expense.status == ExpenseStatus.submitted;
     final canReject = isManager && isSubmitted;
+    final showRejectInfo = !isManager && isAdmin && isSubmitted;
 
     return AlertDialog(
       title: const Text('Expense Details'),
@@ -151,6 +172,29 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
                   color: Colors.red),
             if (widget.expense.reviewedBy?.isNotEmpty == true)
               _buildRow('Reviewed By', widget.expense.reviewedBy!),
+            if (showRejectInfo) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade300),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.orange.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Sadece yöneticiler (Manager) harcamaları reddedebilir.',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -162,6 +206,10 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
           TextButton(
               onPressed: _delete,
               child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        if (isDraftOrRejected && !isAdmin)
+          OutlinedButton(
+              onPressed: _edit,
+              child: const Text('Edit')),
         if (canReject)
           TextButton(
               onPressed: _reject,

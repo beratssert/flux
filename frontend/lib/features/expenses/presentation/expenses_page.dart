@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers/project_provider.dart';
+import '../../auth/data/auth_session_controller.dart';
 import '../data/expenses_controller.dart';
 import '../data/expenses_models.dart';
 import 'add_expense_dialog.dart';
@@ -31,6 +32,8 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     final state = ref.watch(expensesControllerProvider);
     final projectsAsync = ref.watch(projectNamesProvider);
     final categoriesAsync = ref.watch(expenseCategoriesProvider);
+    final userRole = ref.watch(authSessionControllerProvider).session?.profile.role ?? 'Employee';
+    final canManage = userRole != 'Admin'; // Expenses.Manage.Self: Employee + Manager only
 
     return Scaffold(
       appBar: AppBar(
@@ -47,16 +50,62 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
         ],
       ),
       body: _buildBody(state, projectsAsync, categoriesAsync),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () =>
-            _showAddExpenseDialog(context, projectsAsync, categoriesAsync),
-        icon: const Icon(Icons.add),
-        label: const Text('Add Expense'),
-      ),
+      floatingActionButton: canManage
+          ? FloatingActionButton.extended(
+              onPressed: () =>
+                  _showAddExpenseDialog(context, projectsAsync, categoriesAsync),
+              icon: const Icon(Icons.add),
+              label: const Text('Add Expense'),
+            )
+          : null,
     );
   }
 
   Widget _buildBody(
+    ExpensesState state,
+    AsyncValue<Map<int, String>> projectsAsync,
+    AsyncValue<List<ExpenseCategory>> categoriesAsync,
+  ) {
+    return Column(
+      children: [
+        _buildTopBar(projectsAsync.valueOrNull ?? {}),
+        Expanded(
+          child: _buildListContent(state, projectsAsync, categoriesAsync),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTopBar(Map<int, String> projects) {
+    final currentProjectId = ref.read(expensesControllerProvider.notifier).currentProjectId;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: Colors.white,
+      child: Row(
+        children: [
+          const Text('Project:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: DropdownButton<int?>(
+              value: currentProjectId,
+              isExpanded: true,
+              hint: const Text('All Projects'),
+              underline: const SizedBox(),
+              items: [
+                const DropdownMenuItem<int?>(value: null, child: Text('All Projects')),
+                ...projects.entries.map((e) => DropdownMenuItem<int?>(value: e.key, child: Text(e.value))),
+              ],
+              onChanged: (val) {
+                ref.read(expensesControllerProvider.notifier).setProjectFilter(val);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListContent(
     ExpensesState state,
     AsyncValue<Map<int, String>> projectsAsync,
     AsyncValue<List<ExpenseCategory>> categoriesAsync,
@@ -224,9 +273,11 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     AsyncValue<Map<int, String>> projectsAsync,
     AsyncValue<List<ExpenseCategory>> categoriesAsync,
   ) {
+    final initialProjectId = ref.read(expensesControllerProvider.notifier).currentProjectId;
     showDialog(
       context: context,
       builder: (context) => AddExpenseDialog(
+        initialProjectId: initialProjectId,
         projects: projectsAsync.valueOrNull ?? {},
         categories:
             categoriesAsync.valueOrNull?.where((c) => c.isActive).toList() ??

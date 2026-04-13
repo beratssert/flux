@@ -46,34 +46,31 @@ class ExpensesApiClient {
     int? categoryId,
     String? status,
   }) async {
-    // Return mock expenses page
-    return ExpensesPage(
-      items: [
-        ExpenseRecord(
-          id: 101,
-          projectId: 1,
-          expenseDate: DateTime.now().subtract(const Duration(days: 1)),
-          amount: 15.50,
-          currencyCode: 'USD',
-          categoryId: 2,
-          notes: 'Team Lunch',
-          status: ExpenseStatus.approved,
-        ),
-        ExpenseRecord(
-          id: 102,
-          projectId: 2,
-          expenseDate: DateTime.now(),
-          amount: 230.00,
-          currencyCode: 'USD',
-          categoryId: 1,
-          notes: 'Flight to conference',
-          status: ExpenseStatus.draft,
-        ),
-      ],
-      pageNumber: pageNumber,
-      pageSize: pageSize,
-      totalCount: 2,
-    );
+    try {
+      final response = await _dio.get(
+        '/api/v1/Expenses',
+        queryParameters: <String, dynamic>{
+          'pageNumber': pageNumber,
+          'pageSize': pageSize,
+          if (projectId != null) 'projectId': projectId,
+          if (categoryId != null) 'categoryId': categoryId,
+          if (status != null && status.isNotEmpty) 'status': status,
+        },
+        options: _authorizedOptions(),
+      );
+      
+      final data = response.data;
+      if (data is Map<String, dynamic>) {
+          return ExpensesPage.fromJson(data);
+      } else if (data is Map) {
+          final mapped = data.map((key, dynamic item) => MapEntry(key.toString(), item));
+          return ExpensesPage.fromJson(mapped);
+      }
+      throw StateError('Unexpected API payload type.');
+    } on DioException catch (e) {
+      _logger.warning('getExpenses failed', e);
+      throw _handleError(e);
+    }
   }
 
   Future<ExpenseRecord> getExpense(int id) async {
@@ -190,12 +187,19 @@ class ExpensesApiClient {
   }
 
   Future<List<ExpenseCategory>> getCategories() async {
-    // Injecting Mock Data for Expense Categories
-    return [
-      const ExpenseCategory(id: 1, name: 'Travel', isActive: true),
-      const ExpenseCategory(id: 2, name: 'Meals', isActive: true),
-      const ExpenseCategory(id: 3, name: 'Office Supplies', isActive: true),
-      const ExpenseCategory(id: 4, name: 'Software/Hardware', isActive: true),
-    ];
+    try {
+      final response = await _dio.get('/api/v1/expense-categories', options: _authorizedOptions());
+      final raw = response.data;
+      if (raw is! List) {
+        return const <ExpenseCategory>[];
+      }
+      return raw
+          .whereType<Map>()
+          .map((item) => ExpenseCategory.fromJson(item.map((key, dynamic value) => MapEntry(key.toString(), value))))
+          .toList(growable: false);
+    } on DioException catch (e) {
+      _logger.warning('getCategories failed', e);
+      throw _handleError(e);
+    }
   }
 }

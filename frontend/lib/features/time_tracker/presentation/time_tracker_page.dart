@@ -933,64 +933,16 @@ class _TimeTrackerPageState extends ConsumerState<TimeTrackerPage> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authSessionControllerProvider);
-    final profile = authState.session?.profile;
+    final session = authState.session;
+    final profile = session?.profile;
 
-    if (profile == null) {
+    if (profile == null || session == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
     final isCompact = MediaQuery.sizeOf(context).width < 1100;
 
-    if (isCompact) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFF5F7FB),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.transparent,
-          title: Text(_sectionLabel(_selectedSection)),
-        ),
-        drawer: Drawer(
-          child: SafeArea(
-            child: _Sidebar(
-              profile: profile,
-              logoutBusy: _submitting,
-              selectedSection: _selectedSection,
-              onSectionSelected: (section) {
-                Navigator.of(context).pop();
-                _handleSectionSelected(section);
-              },
-              onSettings: _showSettingsMessage,
-              onLogout: _logout,
-            ),
-          ),
-        ),
-        body: _buildMainArea(session, profile, isCompact),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
-      body: SafeArea(
-        child: Row(
-          children: [
-            SizedBox(
-              width: 286,
-              child: _Sidebar(
-                profile: profile,
-                logoutBusy: _submitting,
-                selectedSection: _selectedSection,
-                onSectionSelected: _handleSectionSelected,
-                onSettings: _showSettingsMessage,
-                onLogout: _logout,
-              ),
-            ),
-            Expanded(
-              child: _buildMainArea(session, profile, isCompact),
-            ),
-          ],
-        ),
-      ),
-    );
+    return _buildMainArea(session, profile, isCompact);
   }
 
   Widget _buildMainArea(

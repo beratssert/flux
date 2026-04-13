@@ -12,9 +12,14 @@ class MainLayout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authSessionControllerProvider);
     final profile = authState.session?.profile;
+    if (profile == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final isDesktop = MediaQuery.sizeOf(context).width >= 1100;
     final sidebar = _Sidebar(
-      profile: profile!,
+      profile: profile,
       logoutBusy: false,
       onSettings: () {},
       onLogout: () =>
@@ -120,9 +125,13 @@ class _Sidebar extends StatelessWidget {
                   onTap: () => context.go('/calendar'),
                 ),
                 const SizedBox(height: 8),
-                _NavItem(icon: Icons.folder_copy_rounded, label: 'Projects'),
-                const SizedBox(height: 8),
-                _NavItem(icon: Icons.groups_rounded, label: 'Members'),
+                _NavItem(
+                  icon: Icons.folder_copy_rounded,
+                  label: 'Projects',
+                  selected:
+                      GoRouterState.of(context).uri.toString() == '/projects',
+                  onTap: () => context.go('/projects'),
+                ),
               ],
             ),
           ),

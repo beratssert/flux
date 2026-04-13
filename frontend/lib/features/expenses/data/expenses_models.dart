@@ -89,7 +89,7 @@ class ExpensesPage {
   });
 
   factory ExpensesPage.fromJson(Map<String, dynamic> json) {
-    final list = _readList(json, const ['data', 'Data']) ?? [];
+    final list = _readList(json, const ['items', 'Items', 'data', 'Data']) ?? [];
     return ExpensesPage(
       items: list
           .map((e) => ExpenseRecord.fromJson(e as Map<String, dynamic>))

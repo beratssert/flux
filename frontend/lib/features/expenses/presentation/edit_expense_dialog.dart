@@ -4,38 +4,70 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/expenses_controller.dart';
 import '../data/expenses_models.dart';
 
-class AddExpenseDialog extends ConsumerStatefulWidget {
+class EditExpenseDialog extends ConsumerStatefulWidget {
+  final ExpenseRecord expense;
   final Map<int, String> projects;
   final List<ExpenseCategory> categories;
-  final int? initialProjectId;
 
-  const AddExpenseDialog(
-      {super.key, required this.projects, required this.categories, this.initialProjectId});
+  const EditExpenseDialog({
+    super.key,
+    required this.expense,
+    required this.projects,
+    required this.categories,
+  });
 
   @override
-  ConsumerState<AddExpenseDialog> createState() => _AddExpenseDialogState();
+  ConsumerState<EditExpenseDialog> createState() => _EditExpenseDialogState();
 }
 
-class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
+class _EditExpenseDialogState extends ConsumerState<EditExpenseDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _amountController = TextEditingController();
-  final _notesController = TextEditingController();
+  late final TextEditingController _amountController;
+  late final TextEditingController _notesController;
 
-  int? _selectedProjectId;
-  int? _selectedCategoryId;
-  DateTime _selectedDate = DateTime.now();
-  String _selectedCurrency = 'USD';
+  late int _selectedProjectId;
+  late int _selectedCategoryId;
+  late DateTime _selectedDate;
+  late String _selectedCurrency;
 
   bool _isSubmitting = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _amountController =
+        TextEditingController(text: widget.expense.amount.toString());
+    _notesController =
+        TextEditingController(text: widget.expense.notes ?? '');
+    _selectedProjectId = widget.expense.projectId;
+    _selectedCategoryId = widget.expense.categoryId;
+    _selectedDate = widget.expense.expenseDate;
+    _selectedCurrency = widget.expense.currencyCode;
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (date != null && mounted) {
+      setState(() => _selectedDate = date);
+    }
+  }
+
   void _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedProjectId == null || _selectedCategoryId == null) return;
 
-    final amountStr = _amountController.text.trim();
-    if (amountStr.isEmpty) return;
-
-    final amount = double.tryParse(amountStr);
+    final amount = double.tryParse(_amountController.text.trim());
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid positive amount.')),
@@ -46,87 +78,33 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
     setState(() => _isSubmitting = true);
 
     try {
-      await ref.read(expensesControllerProvider.notifier).createExpense(
-            projectId: _selectedProjectId!,
+      await ref.read(expensesControllerProvider.notifier).updateExpense(
+            widget.expense.id,
+            projectId: _selectedProjectId,
             expenseDate: _selectedDate,
             amount: amount,
             currencyCode: _selectedCurrency,
-            categoryId: _selectedCategoryId!,
-            notes: _notesController.text.trim(),
+            categoryId: _selectedCategoryId,
+            notes: _notesController.text.trim().isEmpty
+                ? null
+                : _notesController.text.trim(),
           );
 
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
+      if (mounted) Navigator.of(context).pop();
     } catch (e) {
-      setState(() => _isSubmitting = false);
       if (mounted) {
+        setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create expense: $e')),
+          SnackBar(content: Text('Failed to update expense: $e')),
         );
       }
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.initialProjectId != null && widget.projects.keys.contains(widget.initialProjectId)) {
-      _selectedProjectId = widget.initialProjectId;
-    } else if (widget.projects.isNotEmpty) {
-      _selectedProjectId = widget.projects.keys.first;
-    }
-    if (widget.categories.isNotEmpty) {
-      _selectedCategoryId = widget.categories.first.id;
-    }
-  }
-
-  Future<void> _pickDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (date != null && mounted) {
-      setState(() {
-        _selectedDate = date;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.projects.isEmpty) {
-      return AlertDialog(
-        title: const Text('Add Expense'),
-        content: const Text(
-            'You do not have any projects or known projects are empty. Please register time first.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      );
-    }
-
-    if (widget.categories.isEmpty) {
-      return AlertDialog(
-        title: const Text('Add Expense'),
-        content: const Text('No expense categories available.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      );
-    }
-
     return AlertDialog(
-      title: const Text('Add Expense'),
+      title: const Text('Edit Expense'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -135,29 +113,33 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DropdownButtonFormField<int>(
-                decoration:
-                    const InputDecoration(labelText: 'Project', isDense: true),
-                initialValue: _selectedProjectId,
+                decoration: const InputDecoration(
+                    labelText: 'Project', isDense: true),
+                initialValue: widget.projects.containsKey(_selectedProjectId)
+                    ? _selectedProjectId
+                    : null,
                 items: widget.projects.entries.map((e) {
                   return DropdownMenuItem<int>(
                       value: e.key, child: Text(e.value));
                 }).toList(),
                 onChanged: (val) {
-                  setState(() => _selectedProjectId = val);
+                  if (val != null) setState(() => _selectedProjectId = val);
                 },
                 validator: (val) => val == null ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<int>(
-                decoration:
-                    const InputDecoration(labelText: 'Category', isDense: true),
-                initialValue: _selectedCategoryId,
+                decoration: const InputDecoration(
+                    labelText: 'Category', isDense: true),
+                initialValue: widget.categories.any((c) => c.id == _selectedCategoryId)
+                    ? _selectedCategoryId
+                    : null,
                 items: widget.categories.map((c) {
                   return DropdownMenuItem<int>(
                       value: c.id, child: Text(c.name));
                 }).toList(),
                 onChanged: (val) {
-                  setState(() => _selectedCategoryId = val);
+                  if (val != null) setState(() => _selectedCategoryId = val);
                 },
                 validator: (val) => val == null ? 'Required' : null,
               ),
@@ -191,7 +173,7 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
                         DropdownMenuItem(value: 'TRY', child: Text('TRY')),
                       ],
                       onChanged: (val) {
-                        setState(() => _selectedCurrency = val!);
+                        if (val != null) setState(() => _selectedCurrency = val);
                       },
                     ),
                   ),
