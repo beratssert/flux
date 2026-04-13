@@ -7,9 +7,7 @@
     <RepositoryType>Public</RepositoryType>
     <PackageProjectUrl>https://www.codewithmukesh.com/project/aspnet-core-webapi-clean-architecture/</PackageProjectUrl>
     <Version>1.1.0</Version>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>CleanArchitecture.WebApi.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
@@ -34,9 +32,11 @@
     <ProjectReference Include="..\CleanArchitecture.Application\CleanArchitecture.Core.csproj" />
     <ProjectReference Include="..\CleanArchitecture.Infrastructure\CleanArchitecture.Infrastructure.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <None Update="CleanArchitecture.WebApi.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+  <Target Name="CopyCoreDocumentationFile" AfterTargets="Build">
+    <Copy
+      SourceFiles="$(MSBuildProjectDirectory)\..\CleanArchitecture.Application\bin\$(Configuration)\$(TargetFramework)\CleanArchitecture.Core.xml"
+      DestinationFolder="$(TargetDir)"
+      SkipUnchangedFiles="true"
+      Condition="Exists('$(MSBuildProjectDirectory)\..\CleanArchitecture.Application\bin\$(Configuration)\$(TargetFramework)\CleanArchitecture.Core.xml')" />
+  </Target>
 </Project>

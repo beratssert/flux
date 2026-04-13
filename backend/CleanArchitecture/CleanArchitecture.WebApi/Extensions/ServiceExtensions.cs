@@ -13,15 +13,21 @@ namespace CleanArchitecture.WebApi.Extensions
         {
             services.AddSwaggerGen(c =>
             {
-                var xmlFile = "CleanArchitecture.WebApi.xml";
-                var xmlPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, xmlFile);
-                c.IncludeXmlComments(xmlPath);
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                foreach (var xmlFile in new[] { "CleanArchitecture.WebApi.xml", "CleanArchitecture.Core.xml" })
+                {
+                    var xmlPath = Path.Combine(baseDir, xmlFile);
+                    if (File.Exists(xmlPath))
+                    {
+                        c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+                    }
+                }
 
                 c.SwaggerDoc("v1", new OpenApiInfo
                 {
                     Version = "v1",
-                    Title = "Clean Architecture - CleanArchitecture.WebApi",
-                    Description = "This Api will be responsible for overall data distribution and authorization.",
+                    Title = "Flux API",
+                    Description = "Time tracking, expenses, reports, projects, and assignments. Project and projectId values are integers (see docs/rest-api-design §1.7). JWT Bearer auth required unless noted.",
                     Contact = new OpenApiContact
                     {
                         Name = "codewithmukesh",

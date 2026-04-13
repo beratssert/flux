@@ -78,6 +78,13 @@ Liste uçlarında aşağıdaki parametreler desteklenebilir:
 - `managed-projects`: manager için yönettiği projeler kapsamı
 - `all`: admin için sistem genel okuma veya yönetim kapsamı
 
+### 1.7 Kimlik türleri (backend implementation)
+Bu dokümandaki örnek JSON’larda bazı alanlar `uuid` olarak gösterilmiştir (özellikle kullanıcı kimlikleri ve soyut “id” örnekleri). **Mevcut Flux backend implementasyonunda:**
+- **Kullanıcı kimlikleri** (`userId`, `managerUserId`, JWT `uid` vb.) string tabanlıdır (ASP.NET Identity ile uyumlu).
+- **Proje kimlikleri** (`projectId`, proje `id`, path parametreleri `…/projects/{id}`) **`integer`** olarak taşınır: `Project` tablosu `int` identity birincil anahtar kullanır; `TimeEntry`, `Expense`, `RunningTimer`, `ProjectAssignment` ve rapor filtrelerindeki `ProjectId` alanları da **`int` foreign key**’dir.
+
+OpenAPI / istemci tarafında proje ile ilgili alanlar **`integer` (int32)** olarak modellenmelidir. Aşağıdaki bölümlerde kalan `"uuid"` örnekleri, kullanıcı id’leri veya tarihsel doküman tutarlılığı içindir; **proje id’leri için geçerli değildir.**
+
 ---
 
 ## 2) Önerilen Policy İsimleri

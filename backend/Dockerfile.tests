@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+COPY CleanArchitecture.sln ./
+COPY CleanArchitecture/ ./CleanArchitecture/
+COPY Tests/ ./Tests/
+COPY scripts/docker-test-entrypoint.sh /usr/local/bin/docker-test-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-test-entrypoint.sh
+
+RUN dotnet restore CleanArchitecture.sln
+
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+ENTRYPOINT ["/usr/local/bin/docker-test-entrypoint.sh"]

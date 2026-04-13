@@ -99,22 +99,37 @@ namespace CleanArchitecture.Infrastructure.Contexts
             builder.Entity<Project>(entity =>
             {
                 entity.Property(p => p.Name).IsRequired().HasMaxLength(150);
+                entity.Property(p => p.Code).HasMaxLength(50);
+                entity.Property(p => p.Description).HasMaxLength(4000);
                 entity.Property(p => p.ManagerUserId).IsRequired();
                 entity.Property(p => p.Status).IsRequired().HasMaxLength(20);
+                entity.Property(p => p.StartDate).HasColumnType("date");
+                entity.Property(p => p.EndDate).HasColumnType("date");
+                entity.HasIndex(p => p.Code)
+                    .IsUnique()
+                    .HasFilter("[Code] IS NOT NULL");
             });
 
             builder.Entity<ProjectAssignment>(entity =>
             {
                 entity.Property(pa => pa.UserId).IsRequired();
+                entity.Property(pa => pa.AssignedAtUtc).IsRequired();
                 entity.HasOne<ApplicationUser>()
                     .WithMany()
                     .HasForeignKey(pa => pa.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne<ApplicationUser>()
+                    .WithMany()
+                    .HasForeignKey(pa => pa.AssignedByUserId)
                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne<Project>()
                     .WithMany()
                     .HasForeignKey(pa => pa.ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
                 entity.HasIndex(pa => new { pa.ProjectId, pa.UserId, pa.IsActive });
+                entity.HasIndex(pa => new { pa.ProjectId, pa.UserId })
+                    .IsUnique()
+                    .HasFilter("[IsActive] = 1");
             });
 
             builder.Entity<RunningTimer>(entity =>

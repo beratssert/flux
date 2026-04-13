@@ -45,6 +45,7 @@ namespace CleanArchitecture.Infrastructure
             services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
             #region Services
             services.AddTransient<IAccountService, AccountService>();
+            services.AddTransient<IUserRolesService, IdentityUserRolesService>();
             #endregion
             services.Configure<JWTSettings>(configuration.GetSection("JWTSettings"));
             services.AddAuthentication(options =>
@@ -150,6 +151,7 @@ namespace CleanArchitecture.Infrastructure
             services.AddTransient<IExpenseCategoryRepositoryAsync, ExpenseCategoryRepositoryAsync>();
             services.AddTransient<IRunningTimerRepositoryAsync, RunningTimerRepositoryAsync>();
             services.AddTransient<IProjectAssignmentRepositoryAsync, ProjectAssignmentRepositoryAsync>();
+            services.AddTransient<IProjectRepositoryAsync, ProjectRepositoryAsync>();
             #endregion
         }
     }

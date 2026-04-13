@@ -196,7 +196,13 @@ namespace CleanArchitecture.UnitTests
             dbContext.Users.Add(manager);
             dbContext.Users.Add(employee);
             dbContext.Projects.Add(new CleanArchitecture.Core.Entities.Project { Id = 10, Name = "P", ManagerUserId = "mgr-1", Status = "Active" });
-            dbContext.ProjectAssignments.Add(new CleanArchitecture.Core.Entities.ProjectAssignment { ProjectId = 10, UserId = "emp-1", IsActive = true });
+            dbContext.ProjectAssignments.Add(new CleanArchitecture.Core.Entities.ProjectAssignment
+            {
+                ProjectId = 10,
+                UserId = "emp-1",
+                AssignedAtUtc = System.DateTime.UtcNow,
+                IsActive = true
+            });
             await dbContext.SaveChangesAsync();
 
             userManager.Setup(x => x.FindByIdAsync("mgr-1")).ReturnsAsync(manager);

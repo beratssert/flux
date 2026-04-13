@@ -164,6 +164,36 @@ public class TimeTrackerIntegrationTests
     }
 
     [Fact]
+    public async Task Projects_List_EmployeeAndManager_ReturnOK()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+        var managerToken = await LoginAndGetTokenAsync(client, "manager@flux.local", "123Pa$$word!");
+
+        using var employeeReq = new HttpRequestMessage(HttpMethod.Get, "/api/v1/projects?pageNumber=1&pageSize=10");
+        employeeReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var employeeResp = await client.SendAsync(employeeReq);
+        Assert.Equal(HttpStatusCode.OK, employeeResp.StatusCode);
+
+        using var managerReq = new HttpRequestMessage(HttpMethod.Get, "/api/v1/projects?pageNumber=1&pageSize=10");
+        managerReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", managerToken);
+        var managerResp = await client.SendAsync(managerReq);
+        Assert.Equal(HttpStatusCode.OK, managerResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task Users_MeAssignments_Employee_ReturnsOK()
+    {
+        using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };
+        var employeeToken = await LoginAndGetTokenAsync(client, "employee@flux.local", "123Pa$$word!");
+
+        using var req = new HttpRequestMessage(HttpMethod.Get, "/api/v1/users/me/assignments");
+        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", employeeToken);
+        var resp = await client.SendAsync(req);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task ProjectSummary_ManagerAllowed_EmployeeForbidden()
     {
         using var client = new HttpClient { BaseAddress = new Uri(BaseUrl) };

@@ -58,6 +58,13 @@ Bu nedenle ayrı `Role` ve `UserRole` tabloları yerine, `User` tablosunda doğr
   - `Rejected`
 - Manager, yönettiği projelerdeki submitted expense’leri reject edebilir.
 
+### 1.8 Proje kimlikleri: `int` (implementation)
+Aşağıdaki entity detaylarında `Project.Id` ve çeşitli `ProjectId` foreign key’ler **hedef tasarımda UUID** olarak yazılmış olabilir. **Flux MVP backend’inde bilinçli olarak `int` kullanılır:**
+- `Project.Id`: `int` identity PK
+- `ProjectAssignment.ProjectId`, `TimeEntry.ProjectId`, `Expense.ProjectId`, `RunningTimer.ProjectId` vb.: hepsi **`int` FK → Project.Id**
+
+Gerekçe: zaman takibi ve gider modülleri baştan bu şemayla kuruldu; tutarlılık ve migration maliyeti açısından proje modülü de aynı modelde kaldı. İleride UUID veya ayrı bir `PublicId` (GUID) ihtiyacı çıkarsa ayrı bir evrim planı yazılabilir.
+
 ---
 
 ## 2) Entity Listesi
@@ -107,7 +114,7 @@ Sistem kullanıcılarını tutar.
 Projeleri tutar.
 
 ### Alanlar
-- `Id` (UUID, PK)
+- `Id` (PK; hedef tasarımda UUID, **mevcut backend’de `int` identity**)
 - `Name` (string, max 150, not null)
 - `Code` (string, max 50, nullable, unique)
 - `Description` (string, nullable)
@@ -128,6 +135,7 @@ Projeleri tutar.
 - Project hard delete uygulanmamalıdır.
 - Silme yerine `Archived` veya `Closed` kullanılmalıdır.
 - Manager pasif yapılmadan veya rolü düşürülmeden önce gerekli ise manager reassignment yapılmalıdır.
+- Bkz. **§1.8** — `Project.Id` ve tüm `ProjectId` FK’leri backend’de **`int`**.
 
 ---
 
@@ -135,8 +143,8 @@ Projeleri tutar.
 Employee’lerin projelere atanmasını tutar.
 
 ### Alanlar
-- `Id` (UUID, PK)
-- `ProjectId` (UUID, FK -> Project, not null)
+- `Id` (PK; hedef tasarımda UUID, **mevcut backend’de `int` identity**)
+- `ProjectId` (FK -> Project, not null; **mevcut backend’de `int`**)
 - `UserId` (UUID, FK -> User, not null)
 - `AssignedAtUtc` (datetime utc, not null)
 - `AssignedByUserId` (UUID, FK -> User, nullable)

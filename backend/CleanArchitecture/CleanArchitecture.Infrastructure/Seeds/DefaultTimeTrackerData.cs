@@ -53,6 +53,8 @@ namespace CleanArchitecture.Infrastructure.Seeds
                 {
                     UserId = basicUser.Id,
                     ProjectId = defaultProject.Id,
+                    AssignedAtUtc = DateTime.UtcNow,
+                    AssignedByUserId = managerUser.Id,
                     IsActive = true
                 });
 
