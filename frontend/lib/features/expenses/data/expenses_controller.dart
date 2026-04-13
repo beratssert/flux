@@ -14,12 +14,14 @@ class ExpensesState {
   final String? error;
   final List<ExpenseRecord> items;
   final int totalCount;
+  final ExpensesFilter filter;
 
   const ExpensesState({
     this.isLoading = false,
     this.error,
     this.items = const [],
     this.totalCount = 0,
+    this.filter = const ExpensesFilter(),
   });
 
   ExpensesState copyWith({
@@ -27,19 +29,20 @@ class ExpensesState {
     String? error,
     List<ExpenseRecord>? items,
     int? totalCount,
+    ExpensesFilter? filter,
   }) {
     return ExpensesState(
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       items: items ?? this.items,
       totalCount: totalCount ?? this.totalCount,
+      filter: filter ?? this.filter,
     );
   }
 }
 
 class ExpensesController extends StateNotifier<ExpensesState> {
   final ExpensesApiClient _client;
-  int? currentProjectId;
 
   ExpensesController(this._client) : super(const ExpensesState());
 
@@ -49,7 +52,10 @@ class ExpensesController extends StateNotifier<ExpensesState> {
       final page = await _client.getExpenses(
         pageNumber: 1, 
         pageSize: 100,
-        projectId: currentProjectId,
+        projectId: state.filter.projectId,
+        categoryId: state.filter.categoryId,
+        from: state.filter.dateRange?.start,
+        to: state.filter.dateRange?.end,
       );
       state = state.copyWith(
         isLoading: false,
@@ -61,9 +67,13 @@ class ExpensesController extends StateNotifier<ExpensesState> {
     }
   }
 
-  Future<void> setProjectFilter(int? projectId) async {
-    currentProjectId = projectId;
+  Future<void> updateFilter(ExpensesFilter newFilter) async {
+    state = state.copyWith(filter: newFilter);
     await fetchExpenses();
+  }
+
+  Future<void> setProjectFilter(int? projectId) async {
+    await updateFilter(state.filter.copyWith(projectId: projectId, clearProjectId: projectId == null));
   }
 
   Future<void> createExpense({
@@ -126,4 +136,43 @@ final expensesControllerProvider =
     StateNotifierProvider<ExpensesController, ExpensesState>((ref) {
   final client = ref.watch(expensesApiClientProvider);
   return ExpensesController(client);
+});
+
+final expenseStatsProvider = Provider.autoDispose((ref) {
+  final state = ref.watch(expensesControllerProvider);
+  final categories = ref.watch(expenseCategoriesProvider).valueOrNull ?? [];
+
+  if (state.items.isEmpty) return null;
+
+  double total = 0;
+  final categorySums = <int, double>{};
+
+  for (final item in state.items) {
+    total += item.amount;
+    categorySums[item.categoryId] =
+        (categorySums[item.categoryId] ?? 0) + item.amount;
+  }
+
+  int? topCategoryId;
+  double maxAmount = -1;
+
+  categorySums.forEach((id, sum) {
+    if (sum > maxAmount) {
+      maxAmount = sum;
+      topCategoryId = id;
+    }
+  });
+
+  String topCategoryName = 'None';
+  if (topCategoryId != null) {
+    topCategoryName = categories
+        .firstWhere(
+          (c) => c.id == topCategoryId,
+          orElse: () =>
+              const ExpenseCategory(id: 0, name: 'Unknown', isActive: true),
+        )
+        .name;
+  }
+
+  return (total: total, topCategory: topCategoryName);
 });

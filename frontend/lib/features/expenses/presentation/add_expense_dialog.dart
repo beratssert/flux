@@ -56,6 +56,12 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
           );
 
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Expense added successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -137,7 +143,7 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
               DropdownButtonFormField<int>(
                 decoration:
                     const InputDecoration(labelText: 'Project', isDense: true),
-                initialValue: _selectedProjectId,
+                value: _selectedProjectId,
                 items: widget.projects.entries.map((e) {
                   return DropdownMenuItem<int>(
                       value: e.key, child: Text(e.value));
@@ -151,7 +157,7 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
               DropdownButtonFormField<int>(
                 decoration:
                     const InputDecoration(labelText: 'Category', isDense: true),
-                initialValue: _selectedCategoryId,
+                value: _selectedCategoryId,
                 items: widget.categories.map((c) {
                   return DropdownMenuItem<int>(
                       value: c.id, child: Text(c.name));
@@ -184,7 +190,7 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
                     child: DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
                           labelText: 'Currency', isDense: true),
-                      initialValue: _selectedCurrency,
+                      value: _selectedCurrency,
                       items: const [
                         DropdownMenuItem(value: 'USD', child: Text('USD')),
                         DropdownMenuItem(value: 'EUR', child: Text('EUR')),

@@ -45,6 +45,8 @@ class ExpensesApiClient {
     int? projectId,
     int? categoryId,
     String? status,
+    DateTime? from,
+    DateTime? to,
   }) async {
     try {
       final response = await _dio.get(
@@ -55,6 +57,8 @@ class ExpensesApiClient {
           if (projectId != null) 'projectId': projectId,
           if (categoryId != null) 'categoryId': categoryId,
           if (status != null && status.isNotEmpty) 'status': status,
+          if (from != null) 'from': from.toIso8601String(),
+          if (to != null) 'to': to.toIso8601String(),
         },
         options: _authorizedOptions(),
       );
@@ -111,11 +115,18 @@ class ExpensesApiClient {
       final response = await _dio.post('/api/v1/Expenses',
           data: payload, options: _authorizedOptions());
 
-      // Could return the ID directly or inside 'data'
-      final dynamic possibleId = response.data?['data'] ?? response.data;
-      if (possibleId is num) {
-        return possibleId.toInt();
+      final dynamic rawData = response.data;
+      if (rawData is num) {
+        return rawData.toInt();
       }
+
+      if (rawData is Map) {
+        final possibleId = rawData['data'] ?? rawData['id'];
+        if (possibleId is num) {
+          return possibleId.toInt();
+        }
+      }
+
       throw Exception('Failed to parse newly created expense ID');
     } on DioException catch (e) {
       _logger.warning('createExpense failed', e);

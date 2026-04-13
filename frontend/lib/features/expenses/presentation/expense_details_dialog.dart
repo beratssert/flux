@@ -133,23 +133,36 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
     }
 
     final authState = ref.watch(authSessionControllerProvider);
-    final userRole = authState.session?.profile.role ?? 'Employee';
+    final userProfile = authState.session?.profile;
+    final userRole = userProfile?.role ?? 'Employee';
+    final currentUserId = userProfile?.id ?? '';
+    
+    final isOwner = widget.expense.userId == currentUserId;
     final isManager = userRole == 'Manager';
     final isAdmin = userRole == 'Admin';
 
-    // Backend policy matrix:
-    // Expenses.Manage.Self → Employee + Manager (NOT Admin)
-    // Expenses.Reject.Team → Manager only
+    // Business Rules from docs/authorization-matrix.md:
+    // 1. Employee/Manager can manage SELF expenses (Edit, Delete, Submit).
+    // 2. Manager can REJECT team expenses (but not edit them).
+    // 3. Admin is Read-only in MVP.
+
     final isDraftOrRejected = widget.expense.status == ExpenseStatus.draft ||
         widget.expense.status == ExpenseStatus.rejected;
     final isDraft = widget.expense.status == ExpenseStatus.draft;
-    final canSubmit = !isAdmin && isDraftOrRejected;
-    final canDelete = !isAdmin && isDraft;
-
-    // Only Manager can reject submitted
     final isSubmitted = widget.expense.status == ExpenseStatus.submitted;
-    final canReject = isManager && isSubmitted;
+
+    // Actions for Owners (Employee or Manager on their own data)
+    final canSubmit = isOwner && !isAdmin && isDraftOrRejected;
+    final canDelete = isOwner && !isAdmin && isDraft;
+    final canEdit = isOwner && !isAdmin && isDraftOrRejected;
+
+    // Actions for Managers on Team data
+    // Manager cannot reject their own expense (they should edit/delete it)
+    final canReject = isManager && isSubmitted && !isOwner;
+    
+    // UI Helpers
     final showRejectInfo = !isManager && isAdmin && isSubmitted;
+    final showOwnershipLabel = !isOwner && !isAdmin;
 
     return AlertDialog(
       title: const Text('Expense Details'),
@@ -160,6 +173,8 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
           children: [
             _buildRow('Project', widget.projectName),
             _buildRow('Category', widget.categoryName),
+            if (showOwnershipLabel)
+              _buildRow('User ID', widget.expense.userId, color: Colors.blueGrey),
             _buildRow('Amount',
                 '${widget.expense.amount} ${widget.expense.currencyCode}'),
             _buildRow('Date',
@@ -206,7 +221,7 @@ class _ExpenseDetailsDialogState extends ConsumerState<ExpenseDetailsDialog> {
           TextButton(
               onPressed: _delete,
               child: const Text('Delete', style: TextStyle(color: Colors.red))),
-        if (isDraftOrRejected && !isAdmin)
+        if (canEdit)
           OutlinedButton(
               onPressed: _edit,
               child: const Text('Edit')),

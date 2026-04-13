@@ -8,6 +8,7 @@ Sen bu projede bir **Frontend Developer** rolündesin. Görevin, uygulamanın `E
 * Projenin hiçbir yerinde, hiçbir koşulda harcoded (elle yazılmış) veya mock veri KULLANMAYACAKSIN.
 * Eğer UI'ı test etmek için veriye ihtiyacın varsa, backend API'den gerçek veri çekeceksin. API henüz o veriyi dönmüyorsa boş state (Empty State) UI'ı tasarlayacaksın.
 * Listeler, dropdown'lar veya detay ekranları dahil her şey gerçek API çağrılarına (Riverpod provider'ları üzerinden) dayanmalıdır.
+* Backend'e kesinlikle dokunma. Eger yazacagimiz kod backend tarafindan desteklenmiyorsa veya implementasyon cok karisik hale geliyorsa ise bunu bana bildir.
 
 ## 2. API ve DTO (Data Transfer Object) Senkronizasyonu
 * **ÖNEMLİ:** `docs/` klasöründeki (örn: `rest-api-design.md`, `plan-clockify.md`) API endpoint tasarımları ve dokümanları ESKİMİŞTİR. Bu dosyaları referans ALMA.

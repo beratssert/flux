@@ -1,3 +1,31 @@
+import 'package:flutter/material.dart';
+
+class ExpensesFilter {
+  final int? projectId;
+  final int? categoryId;
+  final DateTimeRange? dateRange;
+
+  const ExpensesFilter({
+    this.projectId,
+    this.categoryId,
+    this.dateRange,
+  });
+
+  ExpensesFilter copyWith({
+    int? projectId,
+    bool clearProjectId = false,
+    int? categoryId,
+    bool clearCategoryId = false,
+    DateTimeRange? dateRange,
+    bool clearDateRange = false,
+  }) {
+    return ExpensesFilter(
+      projectId: clearProjectId ? null : (projectId ?? this.projectId),
+      categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
+      dateRange: clearDateRange ? null : (dateRange ?? this.dateRange),
+    );
+  }
+}
 
 enum ExpenseStatus {
   draft,
@@ -29,6 +57,7 @@ class ExpenseCategory {
 
 class ExpenseRecord {
   final int id;
+  final String userId;
   final int projectId;
   final DateTime expenseDate;
   final double amount;
@@ -42,6 +71,7 @@ class ExpenseRecord {
 
   const ExpenseRecord({
     required this.id,
+    required this.userId,
     required this.projectId,
     required this.expenseDate,
     required this.amount,
@@ -57,6 +87,7 @@ class ExpenseRecord {
   factory ExpenseRecord.fromJson(Map<String, dynamic> json) {
     return ExpenseRecord(
       id: _readInt(json, const ['id', 'Id']) ?? 0,
+      userId: _readString(json, const ['userId', 'UserId', 'userId']) ?? '',
       projectId: _readInt(json, const ['projectId', 'ProjectId']) ?? 0,
       expenseDate:
           _readUtcDateTime(json, const ['expenseDate', 'ExpenseDate']) ??

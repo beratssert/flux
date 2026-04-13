@@ -67,42 +67,327 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     AsyncValue<List<ExpenseCategory>> categoriesAsync,
   ) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _buildTopBar(projectsAsync.valueOrNull ?? {}),
+        _buildTopBar(state, projectsAsync, categoriesAsync),
+        _buildActiveFilters(state, projectsAsync, categoriesAsync),
         Expanded(
           child: _buildListContent(state, projectsAsync, categoriesAsync),
         ),
+        _buildSummaryBar(),
       ],
     );
   }
 
-  Widget _buildTopBar(Map<int, String> projects) {
-    final currentProjectId = ref.read(expensesControllerProvider.notifier).currentProjectId;
+  Widget _buildSummaryBar() {
+    final stats = ref.watch(expenseStatsProvider);
+    if (stats == null) return const SizedBox.shrink();
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            // Top Category Column
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'TOP CATEGORY',
+                  style: TextStyle(
+                    color: Color(0xFF728099),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    const Icon(Icons.stars_rounded,
+                        size: 14, color: Color(0xFF1E7BF2)),
+                    const SizedBox(width: 4),
+                    Text(
+                      stats.topCategory,
+                      style: const TextStyle(
+                        color: Color(0xFF132039),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(width: 24),
+            // Divider
+            Container(
+              height: 32,
+              width: 1,
+              color: const Color(0xFFE2E8F0),
+            ),
+            const SizedBox(width: 24),
+            // Total Spent Column
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'TOTAL SPENT',
+                  style: TextStyle(
+                    color: Color(0xFF728099),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  NumberFormat.simpleCurrency().format(stats.total),
+                  style: const TextStyle(
+                    color: Color(0xFF1E7BF2),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(), // Pushes FAB space to the right
+            const SizedBox(width: 140), // Reserved space for "Add Expense" FAB
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(
+    ExpensesState state,
+    AsyncValue<Map<int, String>> projectsAsync,
+    AsyncValue<List<ExpenseCategory>> categoriesAsync,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Theme.of(context).colorScheme.surface,
       child: Row(
         children: [
-          const Text('Project:', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(width: 16),
           Expanded(
-            child: DropdownButton<int?>(
-              value: currentProjectId,
-              isExpanded: true,
-              hint: const Text('All Projects'),
-              underline: const SizedBox(),
-              items: [
-                const DropdownMenuItem<int?>(value: null, child: Text('All Projects')),
-                ...projects.entries.map((e) => DropdownMenuItem<int?>(value: e.key, child: Text(e.value))),
-              ],
-              onChanged: (val) {
-                ref.read(expensesControllerProvider.notifier).setProjectFilter(val);
-              },
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ActionChip(
+                    avatar: const Icon(Icons.work_outline, size: 18),
+                    label: const Text('Project'),
+                    onPressed: () => _showProjectPicker(projectsAsync.valueOrNull ?? {}),
+                  ),
+                  const SizedBox(width: 8),
+                  ActionChip(
+                    avatar: const Icon(Icons.category_outlined, size: 18),
+                    label: const Text('Category'),
+                    onPressed: () => _showCategoryPicker(categoriesAsync.valueOrNull ?? []),
+                  ),
+                  const SizedBox(width: 8),
+                  ActionChip(
+                    avatar: const Icon(Icons.date_range, size: 18),
+                    label: const Text('Time Range'),
+                    onPressed: () => _showTimeRangePicker(state.filter.dateRange),
+                  ),
+                ],
+              ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Settings navigation coming soon!')),
+              );
+            },
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildActiveFilters(
+    ExpensesState state,
+    AsyncValue<Map<int, String>> projectsAsync,
+    AsyncValue<List<ExpenseCategory>> categoriesAsync,
+  ) {
+    final filter = state.filter;
+    if (filter.projectId == null && filter.categoryId == null && filter.dateRange == null) {
+      return const SizedBox.shrink();
+    }
+
+    final projects = projectsAsync.valueOrNull ?? {};
+    final categories = categoriesAsync.valueOrNull ?? [];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        children: [
+          if (filter.projectId != null)
+            InputChip(
+              label: Text('Project: ${projects[filter.projectId] ?? filter.projectId}'),
+              onDeleted: () {
+                ref.read(expensesControllerProvider.notifier)
+                   .updateFilter(filter.copyWith(clearProjectId: true));
+              },
+            ),
+          if (filter.categoryId != null)
+            InputChip(
+              label: Text('Category: ${categories.firstWhere((c) => c.id == filter.categoryId, orElse: () => const ExpenseCategory(id: 0, name: 'Unknown', isActive: true)).name}'),
+              onDeleted: () {
+                ref.read(expensesControllerProvider.notifier)
+                   .updateFilter(filter.copyWith(clearCategoryId: true));
+              },
+            ),
+          if (filter.dateRange != null)
+            InputChip(
+              label: Text('${_dateFormat.format(filter.dateRange!.start)} - ${_dateFormat.format(filter.dateRange!.end)}'),
+              onDeleted: () {
+                ref.read(expensesControllerProvider.notifier)
+                   .updateFilter(filter.copyWith(clearDateRange: true));
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showProjectPicker(Map<int, String> projects) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Select Project', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+              const Divider(height: 1),
+              if (projects.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Text('No projects available.'),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: projects.length,
+                    itemBuilder: (context, index) {
+                      final entry = projects.entries.elementAt(index);
+                      return ListTile(
+                        title: Text(entry.value),
+                        onTap: () {
+                          Navigator.pop(context);
+                          final currentFilter = ref.read(expensesControllerProvider).filter;
+                          ref.read(expensesControllerProvider.notifier)
+                             .updateFilter(currentFilter.copyWith(projectId: entry.key));
+                        },
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCategoryPicker(List<ExpenseCategory> categories) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text('Select Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+              const Divider(height: 1),
+              if (categories.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: Text('No categories available.'),
+                )
+              else
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return ListTile(
+                        title: Text(category.name),
+                        onTap: () {
+                          Navigator.pop(context);
+                          final currentFilter = ref.read(expensesControllerProvider).filter;
+                          ref.read(expensesControllerProvider.notifier)
+                             .updateFilter(currentFilter.copyWith(categoryId: category.id));
+                        },
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showTimeRangePicker(DateTimeRange? initialRange) async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      initialDateRange: initialRange,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      final currentFilter = ref.read(expensesControllerProvider).filter;
+      ref.read(expensesControllerProvider.notifier)
+         .updateFilter(currentFilter.copyWith(dateRange: picked));
+    }
   }
 
   Widget _buildListContent(
@@ -273,7 +558,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     AsyncValue<Map<int, String>> projectsAsync,
     AsyncValue<List<ExpenseCategory>> categoriesAsync,
   ) {
-    final initialProjectId = ref.read(expensesControllerProvider.notifier).currentProjectId;
+    final initialProjectId = ref.read(expensesControllerProvider).filter.projectId;
     showDialog(
       context: context,
       builder: (context) => AddExpenseDialog(
