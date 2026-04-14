@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../auth/data/auth_session_controller.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authSessionControllerProvider);
+    final userRole = authState.session?.profile.role?.toLowerCase() ?? '';
+    final isManagerOrAdmin = userRole == 'manager' || userRole == 'admin';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ayarlar'),
-        leading: BackButton(onPressed: () => context.canPop() ? context.pop() : context.go('/expenses')),
+        leading: BackButton(
+            onPressed: () => context.canPop()
+                ? context.pop()
+                : context.go('/expenses')),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -23,6 +32,14 @@ class SettingsPage extends StatelessWidget {
                 icon: Icons.category_outlined,
                 onTap: () => context.go('/settings/expense-categories'),
               ),
+              if (isManagerOrAdmin)
+                _SettingsItem(
+                  title: 'Para Birimleri',
+                  subtitle:
+                      'Harcamalarda kullanılacak para birimlerini yönetin',
+                  icon: Icons.currency_exchange,
+                  onTap: () => context.go('/settings/currencies'),
+                ),
             ],
           ),
         ],

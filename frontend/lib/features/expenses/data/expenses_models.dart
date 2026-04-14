@@ -4,11 +4,13 @@ class ExpensesFilter {
   final int? projectId;
   final int? categoryId;
   final DateTimeRange? dateRange;
+  final String? currencyCode;
 
   const ExpensesFilter({
     this.projectId,
     this.categoryId,
     this.dateRange,
+    this.currencyCode,
   });
 
   ExpensesFilter copyWith({
@@ -18,11 +20,14 @@ class ExpensesFilter {
     bool clearCategoryId = false,
     DateTimeRange? dateRange,
     bool clearDateRange = false,
+    String? currencyCode,
+    bool clearCurrencyCode = false,
   }) {
     return ExpensesFilter(
       projectId: clearProjectId ? null : (projectId ?? this.projectId),
       categoryId: clearCategoryId ? null : (categoryId ?? this.categoryId),
       dateRange: clearDateRange ? null : (dateRange ?? this.dateRange),
+      currencyCode: clearCurrencyCode ? null : (currencyCode ?? this.currencyCode),
     );
   }
 }

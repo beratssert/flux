@@ -12,6 +12,7 @@ import '../presentation/main_layout.dart';
 import '../presentation/launch_screen.dart';
 import '../../features/expenses/presentation/settings_page.dart';
 import '../../features/expenses/presentation/expense_categories_page.dart';
+import '../../features/expenses/presentation/currency_settings_page.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -74,6 +75,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'expense-categories',
                 builder: (context, state) => const ExpenseCategoriesPage(),
+              ),
+              GoRoute(
+                path: 'currencies',
+                builder: (context, state) => const CurrencySettingsPage(),
               ),
             ],
           ),

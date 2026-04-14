@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/currency_settings_provider.dart';
 import '../data/expenses_controller.dart';
 import '../data/expenses_models.dart';
 
@@ -187,19 +188,31 @@ class _AddExpenseDialogState extends ConsumerState<AddExpenseDialog> {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                          labelText: 'Currency', isDense: true),
-                      value: _selectedCurrency,
-                      items: const [
-                        DropdownMenuItem(value: 'USD', child: Text('USD')),
-                        DropdownMenuItem(value: 'EUR', child: Text('EUR')),
-                        DropdownMenuItem(value: 'TRY', child: Text('TRY')),
-                      ],
-                      onChanged: (val) {
-                        setState(() => _selectedCurrency = val!);
-                      },
-                    ),
+                    child: Builder(builder: (context) {
+                      final currenciesAsync =
+                          ref.watch(currencySettingsProvider);
+                      final currencies = currenciesAsync.valueOrNull ??
+                          ['USD', 'EUR', 'TRY'];
+
+                      // Ensure selected value is in the list
+                      final effectiveCurrency =
+                          currencies.contains(_selectedCurrency)
+                              ? _selectedCurrency
+                              : currencies.first;
+
+                      return DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                            labelText: 'Currency', isDense: true),
+                        value: effectiveCurrency,
+                        items: currencies
+                            .map((c) => DropdownMenuItem(
+                                value: c, child: Text(c)))
+                            .toList(),
+                        onChanged: (val) {
+                          setState(() => _selectedCurrency = val!);
+                        },
+                      );
+                    }),
                   ),
                 ],
               ),
