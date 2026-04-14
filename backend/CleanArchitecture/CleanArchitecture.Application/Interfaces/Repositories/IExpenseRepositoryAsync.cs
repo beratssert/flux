@@ -107,7 +107,11 @@ namespace CleanArchitecture.Core.Interfaces.Repositories
             DateTime? from = null,
             DateTime? to = null,
             string currencyCode = null);
-        Task<decimal> GetProjectTotalAmountByManagedProjectsAsync(string managerUserId, int projectId);
-        Task<decimal> GetProjectTotalAmountAllAsync(int projectId);
+        Task<decimal> GetProjectTotalAmountByManagedProjectsAsync(
+            string managerUserId,
+            int projectId,
+            DateTime? from = null,
+            DateTime? to = null);
+        Task<decimal> GetProjectTotalAmountAllAsync(int projectId, DateTime? from = null, DateTime? to = null);
     }
 }

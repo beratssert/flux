@@ -1,4 +1,5 @@
 using CleanArchitecture.Core.DTOs.TimeEntries;
+using CleanArchitecture.Core.Enums;
 using CleanArchitecture.Core.Exceptions;
 using CleanArchitecture.Core.Features.Reports.Queries.GetManagerTeamTimeSummary;
 using CleanArchitecture.Core.Features.Reports.Queries.GetMyTimeSummary;
@@ -72,6 +73,31 @@ namespace CleanArchitecture.UnitTests
 
             _timeEntryRepository.Verify(r => r.GetSummaryRowsByManagedProjectsAsync("manager-1", 1, "employee-1", null, null), Times.Once);
             _timeEntryRepository.Verify(r => r.GetSummaryRowsAllAsync(It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetManagerTeamTimeSummary_WhenAdmin_ShouldUseAllScope()
+        {
+            _authenticatedUserService.SetupGet(a => a.UserId).Returns("admin-user");
+            _authenticatedUserService.SetupGet(a => a.Role).Returns(Roles.Admin.ToString());
+            _timeEntryRepository
+                .Setup(r => r.GetSummaryRowsAllAsync(5, "emp-a", null, null))
+                .ReturnsAsync(new List<TimeSummaryRowDto>
+                {
+                    new TimeSummaryRowDto { UserId = "emp-a", ProjectId = 5, EntryDate = new DateTime(2026, 2, 1), DurationMinutes = 45 }
+                });
+
+            var handler = new GetManagerTeamTimeSummaryQueryHandler(_timeEntryRepository.Object, _authenticatedUserService.Object);
+            var result = await handler.Handle(new GetManagerTeamTimeSummaryQuery
+            {
+                ProjectId = 5,
+                UserId = "emp-a",
+                GroupBy = "user"
+            }, CancellationToken.None);
+
+            Assert.Equal(45, result.TotalMinutes);
+            _timeEntryRepository.Verify(r => r.GetSummaryRowsAllAsync(5, "emp-a", null, null), Times.Once);
+            _timeEntryRepository.Verify(r => r.GetSummaryRowsByManagedProjectsAsync(It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>()), Times.Never);
         }
 
         [Fact]

@@ -8,6 +8,7 @@ using MediatR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -28,11 +29,16 @@ namespace CleanArchitecture.Core.Features.Reports.Queries.GetManagerTeamExpenseS
     {
         private readonly IExpenseRepositoryAsync _expenseRepository;
         private readonly IAuthenticatedUserService _authenticatedUserService;
+        private readonly IAuditService _auditService;
 
-        public GetManagerTeamExpenseSummaryQueryHandler(IExpenseRepositoryAsync expenseRepository, IAuthenticatedUserService authenticatedUserService)
+        public GetManagerTeamExpenseSummaryQueryHandler(
+            IExpenseRepositoryAsync expenseRepository,
+            IAuthenticatedUserService authenticatedUserService,
+            IAuditService auditService = null)
         {
             _expenseRepository = expenseRepository;
             _authenticatedUserService = authenticatedUserService;
+            _auditService = auditService;
         }
 
         public async Task<ExpenseSummaryResponse> Handle(GetManagerTeamExpenseSummaryQuery request, CancellationToken cancellationToken)
@@ -55,7 +61,31 @@ namespace CleanArchitecture.Core.Features.Reports.Queries.GetManagerTeamExpenseS
                 throw new ApiException("Only manager or admin can access team expense summary.");
             }
 
-            return BuildSummary(rows, groupBy);
+            var response = BuildSummary(rows, groupBy);
+
+            if (_auditService != null)
+            {
+                await _auditService.WriteAsync(
+                    "ManagerTeamExpenseSummary",
+                    _authenticatedUserService.UserId,
+                    "Read",
+                    "Manager/admin accessed team expense summary report.",
+                    null,
+                    JsonSerializer.Serialize(new
+                    {
+                        request.ProjectId,
+                        request.UserId,
+                        request.CategoryId,
+                        request.From,
+                        request.To,
+                        GroupBy = groupBy,
+                        RowCount = rows.Count,
+                        GroupCount = response.Groups.Count,
+                        response.TotalAmount
+                    }));
+            }
+
+            return response;
         }
 
         private static string NormalizeGroupBy(string rawGroupBy, string[] allowed)
